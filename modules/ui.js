@@ -1,0 +1,797 @@
+/**
+ * UI Controls, Modals, Forms and Settings Module
+ * Manages view transitions, toasts, modals, inputs, and database import/export flows.
+ */
+
+import * as storage from './storage.js';
+import * as calendar from './calendar.js';
+
+// Global state for appointment modal
+let activeEditingAppt = null; // Hold reference if editing
+let recurrenceChoicePromise = null; // Resolves when recurrence dialog choice is made
+
+/**
+ * Toast Notification System
+ */
+export function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  
+  const text = document.createElement('span');
+  text.textContent = message;
+  
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'toast-close';
+  closeBtn.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+    </svg>
+  `;
+  closeBtn.addEventListener('click', () => {
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 200);
+  });
+  
+  toast.appendChild(text);
+  toast.appendChild(closeBtn);
+  container.appendChild(toast);
+  
+  // Auto dismiss after 3.5s
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(-10px)';
+      toast.style.transition = 'all 0.25s ease';
+      setTimeout(() => toast.remove(), 250);
+    }
+  }, 3500);
+}
+
+/**
+ * Global Loader Controls
+ */
+export function showLoader(text = 'Laden...') {
+  document.getElementById('loader-text').textContent = text;
+  document.getElementById('global-loader').classList.remove('hidden');
+}
+
+export function hideLoader() {
+  document.getElementById('global-loader').classList.add('hidden');
+}
+
+/**
+ * Page Section Navigation
+ */
+export function initNavListeners() {
+  const navBtns = document.querySelectorAll('.nav-btn');
+  const sections = document.querySelectorAll('.app-section');
+
+  navBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-target');
+      
+      // Update buttons
+      navBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      // Update sections
+      sections.forEach(sec => {
+        if (sec.id === targetId) {
+          sec.classList.add('active');
+        } else {
+          sec.classList.remove('active');
+        }
+      });
+
+      // Special action on tab switch
+      if (targetId === 'calendar-section') {
+        calendar.renderCalendar();
+      } else if (targetId === 'users-section') {
+        // Import auth dynamically to render table without cyclic load bottlenecks
+        import('./auth.js').then(auth => auth.renderUsersTable());
+      } else if (targetId === 'settings-section') {
+        renderSettingsTypesEditor();
+        populateGitHubForm();
+      }
+    });
+  });
+}
+
+/**
+ * Populate type option selects and datalists in forms
+ */
+export function refreshFormSelects() {
+  const types = storage.getAppointmentTypes();
+  const select = document.getElementById('appt-type');
+  
+  // Save selected value to restore it
+  const currentVal = select.value;
+  select.innerHTML = '';
+  
+  types.forEach(type => {
+    const opt = document.createElement('option');
+    opt.value = type.id;
+    opt.textContent = type.name;
+    select.appendChild(opt);
+  });
+  
+  if (currentVal) select.value = currentVal;
+
+  // Refresh Autocomplete list for Roster codes
+  const appointments = storage.getAppointments();
+  const datalist = document.getElementById('roster-codes-datalist');
+  const uniqueCodes = [...new Set(appointments.map(a => a.rosterCode))].filter(Boolean);
+  
+  datalist.innerHTML = '';
+  uniqueCodes.forEach(code => {
+    const opt = document.createElement('option');
+    opt.value = code;
+    datalist.appendChild(opt);
+  });
+}
+
+/**
+ * Populate GitHub settings form from active config
+ */
+function populateGitHubForm() {
+  import('./github.js').then(github => {
+    const cfg = github.getConfig();
+    document.getElementById('gh-token').value = cfg.token || '';
+    document.getElementById('gh-repo').value = cfg.repo || '';
+    document.getElementById('gh-branch').value = cfg.branch || 'main';
+    document.getElementById('gh-path').value = cfg.path || 'data.json';
+  });
+}
+
+/**
+ * Renders the editable list of categories/colors in Settings
+ */
+function renderSettingsTypesEditor() {
+  const types = storage.getAppointmentTypes();
+  const container = document.getElementById('settings-types-list');
+  container.innerHTML = '';
+
+  types.forEach(type => {
+    const row = document.createElement('div');
+    row.className = 'type-setting-row';
+
+    const inputName = document.createElement('input');
+    inputName.type = 'text';
+    inputName.value = type.name;
+    inputName.className = 'type-name-input';
+    inputName.dataset.id = type.id;
+
+    const colorPickerWrapper = document.createElement('div');
+    colorPickerWrapper.className = 'type-color-picker';
+
+    const picker = document.createElement('input');
+    picker.type = 'color';
+    picker.value = type.color;
+    picker.className = 'type-color-input';
+    picker.dataset.id = type.id;
+
+    colorPickerWrapper.appendChild(picker);
+    row.appendChild(inputName);
+    row.appendChild(colorPickerWrapper);
+    container.appendChild(row);
+  });
+}
+
+/**
+ * Prompts user with "This instance only" vs "Whole series" modal
+ */
+function promptRecurrenceChoice(dateStr) {
+  const modal = document.getElementById('recurrence-choice-modal');
+  modal.classList.add('active');
+  
+  // Format Date for display
+  const d = new Date(dateStr + 'T00:00:00');
+  document.getElementById('recur-choice-date').textContent = d.toLocaleDateString('de-DE');
+
+  return new Promise((resolve) => {
+    recurrenceChoicePromise = resolve;
+  });
+}
+
+function closeRecurrenceChoiceModal() {
+  document.getElementById('recurrence-choice-modal').classList.remove('active');
+  recurrenceChoicePromise = null;
+}
+
+/**
+ * Opens Appointment Modal for creation
+ */
+export function openAppointmentModalForCreate(dateStr, startTime = '08:00', endTime = '16:00') {
+  activeEditingAppt = null;
+  
+  document.getElementById('modal-title').textContent = 'Termin erstellen';
+  document.getElementById('appointment-id').value = '';
+  document.getElementById('appointment-series-id').value = '';
+  
+  // Defaults
+  document.getElementById('appt-title').value = '';
+  document.getElementById('appt-date').value = dateStr;
+  
+  // End date default same day
+  const apptEndDateInput = document.getElementById('appt-end-date');
+  apptEndDateInput.value = dateStr;
+  document.getElementById('appt-end-date-wrapper').classList.add('hidden'); // hidden for non-series
+
+  document.getElementById('appt-start-time').value = startTime;
+  document.getElementById('appt-end-time').value = endTime;
+  document.getElementById('appt-roster-code').value = '';
+  
+  refreshFormSelects();
+  
+  // Default color radio selection
+  document.querySelector('input[name="appt-color"][value="default"]').checked = true;
+  document.getElementById('appt-color-custom-radio').checked = false;
+
+  // Recurrence defaults
+  const recurCheckbox = document.getElementById('appt-is-recurring');
+  recurCheckbox.checked = false;
+  
+  const recurDetails = document.getElementById('recurrence-details');
+  recurDetails.classList.add('hidden-slide');
+
+  // Hide delete button
+  document.getElementById('appt-delete-btn').classList.add('hidden');
+
+  // Open modal
+  document.getElementById('appointment-modal').classList.add('active');
+}
+
+/**
+ * Opens Appointment Modal to edit existing
+ */
+export function openAppointmentModalForEdit(appt) {
+  activeEditingAppt = appt;
+  
+  document.getElementById('modal-title').textContent = 'Termin bearbeiten';
+  document.getElementById('appointment-id').value = appt.id;
+  document.getElementById('appointment-series-id').value = appt.seriesId || '';
+  
+  document.getElementById('appt-title').value = appt.title;
+  document.getElementById('appt-date').value = appt.instanceDate || appt.date;
+  
+  document.getElementById('appt-start-time').value = appt.startTime;
+  document.getElementById('appt-end-time').value = appt.endTime;
+  document.getElementById('appt-roster-code').value = appt.rosterCode;
+  
+  refreshFormSelects();
+  document.getElementById('appt-type').value = appt.type;
+
+  // Color selection
+  const colorRadios = document.querySelectorAll('input[name="appt-color"]');
+  let matchedColor = false;
+
+  colorRadios.forEach(radio => {
+    if (radio.value === appt.color) {
+      radio.checked = true;
+      matchedColor = true;
+    }
+  });
+
+  if (!appt.color) {
+    document.querySelector('input[name="appt-color"][value="default"]').checked = true;
+  } else if (!matchedColor) {
+    // Custom color
+    document.getElementById('appt-color-custom-radio').checked = true;
+    document.getElementById('appt-color-custom-input').value = appt.color;
+    document.querySelector('.custom-color-display').style.backgroundColor = appt.color;
+  }
+
+  // Recurrence
+  const recurCheckbox = document.getElementById('appt-is-recurring');
+  const recurDetails = document.getElementById('recurrence-details');
+  const apptEndDateInput = document.getElementById('appt-end-date');
+  const apptEndDateWrapper = document.getElementById('appt-end-date-wrapper');
+
+  if (appt.recurrence && appt.recurrence.frequency !== 'none') {
+    recurCheckbox.checked = true;
+    recurDetails.classList.remove('hidden-slide');
+    apptEndDateWrapper.classList.remove('hidden');
+    
+    // Set series values
+    document.getElementById('recur-frequency').value = appt.recurrence.frequency;
+    document.getElementById('recur-interval').value = appt.recurrence.interval || 1;
+    
+    // Series end date
+    document.getElementById('recur-end-date').value = appt.recurrence.endDate || '';
+    
+    // Appt end date limit (duration offset of series)
+    apptEndDateInput.value = appt.date; // root date
+    
+    // Populate weekly days if applicable
+    const dayPills = document.querySelectorAll('.weekdays-selector input');
+    dayPills.forEach(pill => {
+      const val = parseInt(pill.value);
+      pill.checked = appt.recurrence.daysOfWeek && appt.recurrence.daysOfWeek.includes(val);
+    });
+    
+    document.getElementById('recur-days-weekly').style.display = appt.recurrence.frequency === 'weekly' ? 'block' : 'none';
+  } else {
+    recurCheckbox.checked = false;
+    recurDetails.classList.add('hidden-slide');
+    apptEndDateWrapper.classList.add('hidden');
+    apptEndDateInput.value = appt.instanceDate || appt.date;
+  }
+
+  // Show delete button
+  document.getElementById('appt-delete-btn').classList.remove('hidden');
+
+  // Open modal
+  document.getElementById('appointment-modal').classList.add('active');
+}
+
+function closeAppointmentModal() {
+  document.getElementById('appointment-modal').classList.remove('active');
+  activeEditingAppt = null;
+}
+
+/**
+ * Initializes All Modal/Form event listeners
+ */
+export function initUIListeners() {
+  // Navigation
+  initNavListeners();
+
+  // Calendar search input listener
+  document.getElementById('roster-search').addEventListener('input', (e) => {
+    calendar.setRosterSearch(e.target.value);
+  });
+
+  // Calendar filter resets
+  document.getElementById('clear-roster-filters').addEventListener('click', () => {
+    calendar.resetAllFilters();
+  });
+  document.getElementById('clear-type-filters').addEventListener('click', () => {
+    calendar.resetAllFilters();
+  });
+
+  // View mode switcher listener
+  const viewRadios = document.querySelectorAll('input[name="calendar-view-mode"]');
+  viewRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      const mode = e.target.value;
+      const customInputs = document.getElementById('custom-date-inputs');
+      
+      if (mode === 'custom') {
+        customInputs.classList.remove('hidden-slide');
+      } else {
+        customInputs.classList.add('hidden-slide');
+        calendar.setViewMode(mode);
+      }
+    });
+  });
+
+  // Apply custom date range
+  document.getElementById('apply-custom-range').addEventListener('click', () => {
+    const start = document.getElementById('custom-start-date').value;
+    const end = document.getElementById('custom-end-date').value;
+    
+    if (!start || !end) {
+      showToast('Bitte wählen Sie Start- und Enddatum aus.', 'warning');
+      return;
+    }
+    
+    if (new Date(start) > new Date(end)) {
+      showToast('Das Startdatum darf nicht nach dem Enddatum liegen.', 'warning');
+      return;
+    }
+
+    calendar.setCustomRange(start, end);
+  });
+
+  // Prev / Next / Today
+  document.getElementById('cal-prev').addEventListener('click', () => calendar.shiftDate(-1));
+  document.getElementById('cal-next').addEventListener('click', () => calendar.shiftDate(1));
+  document.getElementById('cal-today').addEventListener('click', () => calendar.setDate(new Date()));
+
+  // Create Button clicks
+  document.getElementById('add-appointment-btn').addEventListener('click', () => {
+    const todayStr = calendar.formatDateString(new Date());
+    openAppointmentModalForCreate(todayStr);
+  });
+
+  // Close Modals
+  document.getElementById('modal-close').addEventListener('click', closeAppointmentModal);
+  document.getElementById('appt-cancel-btn').addEventListener('click', closeAppointmentModal);
+
+  // Custom color input visual synchronization
+  const customColorInput = document.getElementById('appt-color-custom-input');
+  customColorInput.addEventListener('input', (e) => {
+    document.getElementById('appt-color-custom-radio').checked = true;
+    document.querySelector('.custom-color-display').style.backgroundColor = e.target.value;
+  });
+
+  // Toggle recurrence section visibility
+  const recurCheckbox = document.getElementById('appt-is-recurring');
+  recurCheckbox.addEventListener('change', (e) => {
+    const recurDetails = document.getElementById('recurrence-details');
+    const apptEndDateWrapper = document.getElementById('appt-end-date-wrapper');
+    
+    if (e.target.checked) {
+      recurDetails.classList.remove('hidden-slide');
+      apptEndDateWrapper.classList.remove('hidden');
+      document.getElementById('recur-days-weekly').style.display = 
+        document.getElementById('recur-frequency').value === 'weekly' ? 'block' : 'none';
+    } else {
+      recurDetails.classList.add('hidden-slide');
+      apptEndDateWrapper.classList.add('hidden');
+    }
+  });
+
+  // Toggle recurrence days-of-week based on frequency
+  document.getElementById('recur-frequency').addEventListener('change', (e) => {
+    document.getElementById('recur-days-weekly').style.display = e.target.value === 'weekly' ? 'block' : 'none';
+  });
+
+  // --- Appointment Form Submit Handler ---
+  document.getElementById('appointment-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const title = document.getElementById('appt-title').value.trim();
+    const date = document.getElementById('appt-date').value;
+    const startTime = document.getElementById('appt-start-time').value;
+    const endTime = document.getElementById('appt-end-time').value;
+    const rosterCode = document.getElementById('appt-roster-code').value.trim().toUpperCase();
+    const type = document.getElementById('appt-type').value;
+
+    if (timeToMinutes(startTime) >= timeToMinutes(endTime)) {
+      showToast('Die Endzeit muss nach der Anfangszeit liegen.', 'warning');
+      return;
+    }
+
+    // Color picker resolution
+    const colorRadio = document.querySelector('input[name="appt-color"]:checked').value;
+    const color = colorRadio === 'default' ? '' : (colorRadio === 'custom' ? customColorInput.value : colorRadio);
+
+    // Recurrence resolution
+    const isRec = recurCheckbox.checked;
+    let recurrence = null;
+    
+    if (isRec) {
+      const frequency = document.getElementById('recur-frequency').value;
+      const interval = parseInt(document.getElementById('recur-interval').value) || 1;
+      const endDate = document.getElementById('recur-end-date').value || null;
+      
+      let daysOfWeek = [];
+      if (frequency === 'weekly') {
+        const checkedDays = document.querySelectorAll('.weekdays-selector input:checked');
+        checkedDays.forEach(cb => daysOfWeek.push(parseInt(cb.value)));
+        
+        if (daysOfWeek.length === 0) {
+          showToast('Bitte wählen Sie mindestens einen Wochentag aus.', 'warning');
+          return;
+        }
+      }
+
+      recurrence = { frequency, interval, daysOfWeek, endDate };
+    }
+
+    const appts = storage.getAppointments();
+
+    // Determine Action: CREATE vs EDIT
+    if (!activeEditingAppt) {
+      // CREATE NEW
+      const newAppt = {
+        id: `evt-${Date.now()}`,
+        title, date, startTime, endTime, rosterCode, type, color,
+        seriesId: isRec ? `ser-${Date.now()}` : null,
+        recurrence,
+        exceptions: []
+      };
+
+      storage.setAppointments([...appts, newAppt]);
+      showToast('Termin erfolgreich erstellt.', 'success');
+      closeAppointmentModal();
+      calendar.renderCalendar();
+      
+    } else {
+      // EDIT EXISTING
+      const isSeries = activeEditingAppt.seriesId && activeEditingAppt.recurrence && activeEditingAppt.recurrence.frequency !== 'none';
+      
+      if (isSeries) {
+        // Prompt series choice: single vs all
+        const choice = await promptRecurrenceChoice(activeEditingAppt.instanceDate);
+        closeRecurrenceChoiceModal();
+
+        if (!choice) return; // Cancelled
+
+        if (choice === 'single') {
+          // 1. Add exception date to the original series object
+          const updated = appts.map(appt => {
+            if (appt.id === activeEditingAppt.originalId) {
+              const exceptions = appt.exceptions || [];
+              if (!exceptions.includes(activeEditingAppt.instanceDate)) {
+                exceptions.push(activeEditingAppt.instanceDate);
+              }
+              appt.exceptions = exceptions;
+            }
+            return appt;
+          });
+
+          // 2. Create a new standalone appointment for that date with modified details
+          const detachedAppt = {
+            id: `evt-${Date.now()}`,
+            title,
+            date: activeEditingAppt.instanceDate, // on this specific occurrence date
+            startTime, endTime, rosterCode, type, color,
+            seriesId: activeEditingAppt.seriesId, // keep series reference but no recurrence
+            recurrence: null,
+            exceptions: []
+          };
+
+          storage.setAppointments([...updated, detachedAppt]);
+          showToast('Dieser Termin wurde aus der Serie gelöst und geändert.', 'success');
+
+        } else if (choice === 'all') {
+          // Update the parent series object itself
+          const updated = appts.map(appt => {
+            if (appt.id === activeEditingAppt.originalId) {
+              // Keep original ID and original start date, update details
+              appt.title = title;
+              appt.date = date; // moving start of series is allowed
+              appt.startTime = startTime;
+              appt.endTime = endTime;
+              appt.rosterCode = rosterCode;
+              appt.type = type;
+              appt.color = color;
+              appt.recurrence = recurrence;
+              // If recurrence rules changed, might want to reset exceptions, let's keep it simple
+            }
+            return appt;
+          });
+
+          storage.setAppointments(updated);
+          showToast('Die gesamte Terminserie wurde aktualisiert.', 'success');
+        }
+        
+      } else {
+        // Normal single appointment edit
+        const updated = appts.map(appt => {
+          if (appt.id === activeEditingAppt.id) {
+            appt.title = title;
+            appt.date = date;
+            appt.startTime = startTime;
+            appt.endTime = endTime;
+            appt.rosterCode = rosterCode;
+            appt.type = type;
+            appt.color = color;
+            appt.recurrence = recurrence;
+            appt.seriesId = isRec ? (appt.seriesId || `ser-${Date.now()}`) : null;
+          }
+          return appt;
+        });
+
+        storage.setAppointments(updated);
+        showToast('Termin aktualisiert.', 'success');
+      }
+
+      closeAppointmentModal();
+      calendar.renderCalendar();
+    }
+  });
+
+  // --- Appointment Delete Button Handler ---
+  document.getElementById('appt-delete-btn').addEventListener('click', async () => {
+    if (!activeEditingAppt) return;
+    
+    const appts = storage.getAppointments();
+    const isSeries = activeEditingAppt.seriesId && activeEditingAppt.recurrence && activeEditingAppt.recurrence.frequency !== 'none';
+
+    if (isSeries) {
+      // Choice prompt
+      const choice = await promptRecurrenceChoice(activeEditingAppt.instanceDate);
+      closeRecurrenceChoiceModal();
+
+      if (!choice) return; // cancelled
+
+      if (choice === 'single') {
+        // Add exception to series
+        const updated = appts.map(appt => {
+          if (appt.id === activeEditingAppt.originalId) {
+            const exceptions = appt.exceptions || [];
+            if (!exceptions.includes(activeEditingAppt.instanceDate)) {
+              exceptions.push(activeEditingAppt.instanceDate);
+            }
+            appt.exceptions = exceptions;
+          }
+          return appt;
+        });
+
+        storage.setAppointments(updated);
+        showToast('Dieser Termin wurde aus der Serie gelöscht.', 'success');
+
+      } else if (choice === 'all') {
+        // Delete the parent series template fully
+        const updated = appts.filter(appt => appt.id !== activeEditingAppt.originalId);
+        storage.setAppointments(updated);
+        showToast('Die gesamte Terminserie wurde gelöscht.', 'success');
+      }
+
+    } else {
+      // Normal single appointment delete
+      if (confirm('Möchten Sie diesen Termin wirklich löschen?')) {
+        const updated = appts.filter(appt => appt.id !== activeEditingAppt.id);
+        storage.setAppointments(updated);
+        showToast('Termin gelöscht.', 'success');
+      } else {
+        return; // aborted
+      }
+    }
+
+    closeAppointmentModal();
+    calendar.renderCalendar();
+  });
+
+  // Recurrence choice modal clicks resolvers
+  document.getElementById('recur-choice-single').addEventListener('click', () => {
+    if (recurrenceChoicePromise) recurrenceChoicePromise('single');
+  });
+  document.getElementById('recur-choice-all').addEventListener('click', () => {
+    if (recurrenceChoicePromise) recurrenceChoicePromise('all');
+  });
+  document.getElementById('recur-choice-cancel').addEventListener('click', () => {
+    if (recurrenceChoicePromise) recurrenceChoicePromise(null);
+    closeRecurrenceChoiceModal();
+  });
+
+  // --- settings view - Categories/Colors Form Submit ---
+  document.getElementById('save-types-btn').addEventListener('click', () => {
+    const names = document.querySelectorAll('.type-name-input');
+    const colors = document.querySelectorAll('.type-color-input');
+    
+    const updatedTypes = [];
+    names.forEach((nameEl, index) => {
+      const id = nameEl.dataset.id;
+      const name = nameEl.value.trim();
+      const color = colors[index].value;
+      
+      if (name) {
+        updatedTypes.push({ id, name, color });
+      }
+    });
+
+    if (updatedTypes.length === 0) {
+      showToast('Kategorien dürfen nicht leer sein.', 'warning');
+      return;
+    }
+
+    storage.setAppointmentTypes(updatedTypes);
+    showToast('Kategorien und Farben gespeichert.', 'success');
+    refreshFormSelects();
+    calendar.renderCalendar();
+  });
+
+  // --- settings view - GitHub Form Submit ---
+  document.getElementById('github-settings-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const token = document.getElementById('gh-token').value.trim();
+    const repo = document.getElementById('gh-repo').value.trim();
+    const branch = document.getElementById('gh-branch').value.trim();
+    const path = document.getElementById('gh-path').value.trim();
+
+    if (!token || !repo) {
+      showToast('GitHub Token und Repository sind erforderlich.', 'warning');
+      return;
+    }
+
+    import('./github.js').then(async (github) => {
+      showLoader('Verbindung mit GitHub wird geprüft...');
+      try {
+        const res = await github.testConnection({ token, repo, branch, path });
+        
+        // Save
+        github.saveConfig({ token, repo, branch, path });
+        
+        hideLoader();
+        showToast('Erfolgreich mit GitHub verbunden und konfiguriert!', 'success');
+        
+        // Trigger sync
+        showLoader('Daten mit GitHub synchronisieren...');
+        await storage.initDatabase();
+        hideLoader();
+        
+        calendar.renderCalendar();
+      } catch (err) {
+        hideLoader();
+        showToast(`GitHub-Verbindungsfehler: ${err.message}`, 'danger');
+      }
+    });
+  });
+
+  // GitHub settings - Test Connection Button
+  document.getElementById('gh-test-btn').addEventListener('click', () => {
+    const token = document.getElementById('gh-token').value.trim();
+    const repo = document.getElementById('gh-repo').value.trim();
+    const branch = document.getElementById('gh-branch').value.trim();
+    const path = document.getElementById('gh-path').value.trim();
+
+    if (!token || !repo) {
+      showToast('Bitte Token und Repo ausfüllen zum Testen.', 'warning');
+      return;
+    }
+
+    import('./github.js').then(async (github) => {
+      showLoader('Prüfe GitHub Verbindung...');
+      try {
+        const res = await github.testConnection({ token, repo, branch, path });
+        hideLoader();
+        if (res.fileExists) {
+          showToast('Erfolgreich! Die Datei "data.json" existiert bereits im Repository.', 'success');
+        } else {
+          showToast('Erfolgreich! Die Verbindung steht. "data.json" wird beim ersten Speichern erstellt.', 'info');
+        }
+      } catch (err) {
+        hideLoader();
+        showToast(`Test fehlgeschlagen: ${err.message}`, 'danger');
+      }
+    });
+  });
+
+  // --- Manual JSON Data Export ---
+  document.getElementById('export-json-btn').addEventListener('click', () => {
+    const dbData = storage.getDatabase();
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dbData, null, 2));
+    
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `ausbildungskalender_backup_${calendar.formatDateString(new Date())}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    
+    showToast('JSON Backup heruntergeladen.', 'success');
+  });
+
+  // --- Manual JSON Data Import ---
+  const fileInput = document.getElementById('import-json-file');
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const json = JSON.parse(evt.target.result);
+        
+        if (confirm('Möchten Sie diese JSON-Datei wirklich importieren? Alle aktuellen Termine und Benutzer werden überschrieben!')) {
+          showLoader('Importiere Backup...');
+          storage.importDatabase(json);
+          
+          // Force immediate push to GitHub if active
+          await storage.forceSyncNow();
+          
+          hideLoader();
+          showToast('Backup erfolgreich importiert!', 'success');
+          
+          // Re-render
+          calendar.renderCalendar();
+          refreshFormSelects();
+          
+          // Re-populate settings type editor list if current view is settings
+          const activeNavBtn = document.querySelector('.nav-btn.active');
+          if (activeNavBtn && activeNavBtn.getAttribute('data-target') === 'settings-section') {
+            renderSettingsTypesEditor();
+          }
+        }
+      } catch (err) {
+        hideLoader();
+        showToast(`Fehler beim Einlesen: ${err.message}`, 'danger');
+      }
+    };
+    reader.readAsText(file);
+    // Clear value to allow re-uploading same file
+    fileInput.value = '';
+  });
+
+  // Lock Button in Header
+  document.getElementById('lock-btn').addEventListener('click', () => {
+    import('./auth.js').then(auth => auth.lockApp());
+  });
+}
+export { promptRecurrenceChoice };

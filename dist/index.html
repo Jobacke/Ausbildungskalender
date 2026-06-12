@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ausbildungskalender</title>
+  <!-- Google Fonts: Outfit (headings) and Inter (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/assets/index-CHUZNdoN.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-B99Ez4nv.css">
+</head>
+<body class="dark-theme">
+  <!-- Loader Overlay -->
+  <div id="global-loader" class="loader-overlay hidden">
+    <div class="loader-spinner"></div>
+    <span id="loader-text">Laden...</span>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Lock Screen / Auth View -->
+  <div id="auth-view" class="auth-view view active">
+    <div class="auth-card glass">
+      <div class="auth-header">
+        <div class="app-logo">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
+          </svg>
+        </div>
+        <h1>Ausbildungskalender</h1>
+        <p id="auth-subtitle">Wählen Sie Ihren Account aus</p>
+      </div>
+
+      <!-- User List (shown when users exist) -->
+      <div id="auth-users-selection" class="auth-users-selection">
+        <div id="users-grid" class="users-grid">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- PIN Input Screen (shown after user selection) -->
+      <div id="auth-pin-entry" class="auth-pin-entry hidden">
+        <button id="auth-back-to-users" class="btn-back">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+          </svg>
+          Zurück zur Auswahl
+        </button>
+        <div class="selected-user-badge">
+          <div id="selected-user-avatar" class="user-avatar-large">U</div>
+          <h3 id="selected-user-name">Benutzer</h3>
+        </div>
+        
+        <div class="pin-display">
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+        </div>
+
+        <input type="password" id="pin-hidden-input" pattern="[0-9]*" inputmode="numeric" maxlength="6" autofocus readonly>
+
+        <div class="pin-keyboard">
+          <button class="pin-key" data-value="1">1</button>
+          <button class="pin-key" data-value="2">2</button>
+          <button class="pin-key" data-value="3">3</button>
+          <button class="pin-key" data-value="4">4</button>
+          <button class="pin-key" data-value="5">5</button>
+          <button class="pin-key" data-value="6">6</button>
+          <button class="pin-key" data-value="7">7</button>
+          <button class="pin-key" data-value="8">8</button>
+          <button class="pin-key" data-value="9">9</button>
+          <button class="pin-key btn-clear" data-value="clear">C</button>
+          <button class="pin-key" data-value="0">0</button>
+          <button class="pin-key btn-backspace" data-value="backspace">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75 14.25 12m0 0 2.25 2.25M14.25 12l2.25-2.25M14.25 12 12 14.25m-2.58 4.92-6.374-6.363a2.25 2.25 0 0 1 0-3.182L9.42 3.03A2.25 2.25 0 0 1 11.022 2.3h9.728a2.25 2.25 0 0 1 2.25 2.25v13.5a2.25 2.25 0 0 1-2.25 2.25h-9.728a2.25 2.25 0 0 1-1.602-.67Z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Onboarding screen (shown when NO users exist) -->
+      <div id="auth-onboarding" class="auth-onboarding hidden">
+        <h2>Ersteinrichtung</h2>
+        <p>Erstellen Sie den ersten Benutzer, um die App zu nutzen.</p>
+        <form id="onboarding-form" class="form-group">
+          <div class="input-wrapper">
+            <label for="onboard-username">Benutzername</label>
+            <input type="text" id="onboard-username" required placeholder="z.B. Johannes">
+          </div>
+          <div class="input-wrapper">
+            <label for="onboard-pin">PIN (4-6 Ziffern)</label>
+            <input type="password" id="onboard-pin" pattern="[0-9]{4,6}" inputmode="numeric" required placeholder="1234">
+          </div>
+          <div class="input-wrapper">
+            <label for="onboard-pin-confirm">PIN bestätigen</label>
+            <input type="password" id="onboard-pin-confirm" pattern="[0-9]{4,6}" inputmode="numeric" required placeholder="1234">
+          </div>
+          <button type="submit" class="btn-primary">Einrichten & Anmelden</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Shell (Calendar Dashboard / Main App) -->
+  <div id="app-shell" class="app-shell view hidden">
+    <!-- Header -->
+    <header class="main-header glass">
+      <div class="header-left">
+        <div class="brand">
+          <svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
+          </svg>
+          <span class="brand-text">Ausbildungskalender</span>
+        </div>
+        <nav class="main-nav">
+          <button class="nav-btn active" data-target="calendar-section">Kalender</button>
+          <button class="nav-btn" data-target="users-section">Benutzerverwaltung</button>
+          <button class="nav-btn" data-target="settings-section">Einstellungen</button>
+        </nav>
+      </div>
+
+      <div class="header-right">
+        <!-- GitHub Sync status indicator -->
+        <div id="github-sync-indicator" class="sync-indicator not-configured" title="GitHub Sync nicht eingerichtet">
+          <span class="indicator-dot"></span>
+          <span id="sync-status-text" class="indicator-text">Lokal</span>
+          <svg class="sync-spinner hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        </div>
+
+        <div class="user-profile">
+          <div id="user-avatar" class="user-avatar">U</div>
+          <span id="user-display-name" class="user-name">Benutzer</span>
+        </div>
+
+        <button id="lock-btn" class="btn-icon" title="App sperren">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="app-main">
+      
+      <!-- Calendar Section -->
+      <section id="calendar-section" class="app-section active">
+        <!-- Sidebar filters -->
+        <aside class="sidebar-filters glass">
+          <div class="sidebar-block">
+            <h3>Zeitraum</h3>
+            <div class="view-mode-selector">
+              <label class="radio-label">
+                <input type="radio" name="calendar-view-mode" value="day">
+                <span class="radio-button">Tag</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="calendar-view-mode" value="week" checked>
+                <span class="radio-button">Woche</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="calendar-view-mode" value="month">
+                <span class="radio-button">Monat</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="calendar-view-mode" value="custom">
+                <span class="radio-button">Zeitraum</span>
+              </label>
+            </div>
+            
+            <!-- Custom Date Inputs (hidden until custom selected) -->
+            <div id="custom-date-inputs" class="custom-date-inputs hidden-slide">
+              <div class="input-wrapper">
+                <label for="custom-start-date">Startdatum</label>
+                <input type="date" id="custom-start-date">
+              </div>
+              <div class="input-wrapper">
+                <label for="custom-end-date">Enddatum</label>
+                <input type="date" id="custom-end-date">
+              </div>
+              <button id="apply-custom-range" class="btn-secondary btn-sm">Anwenden</button>
+            </div>
+          </div>
+
+          <!-- Roster Code Filter -->
+          <div class="sidebar-block">
+            <div class="sidebar-block-header">
+              <h3>Dienstplankürzel</h3>
+              <button id="clear-roster-filters" class="btn-link">Alle</button>
+            </div>
+            <div class="search-box">
+              <input type="text" id="roster-search" placeholder="Suchen...">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.637 10.637Z" />
+              </svg>
+            </div>
+            <div id="roster-filters-list" class="filter-checklist">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Series / Terminarten Filter -->
+          <div class="sidebar-block">
+            <div class="sidebar-block-header">
+              <h3>Terminarten & Serien</h3>
+              <button id="clear-type-filters" class="btn-link">Alle</button>
+            </div>
+            <div id="type-filters-list" class="filter-checklist">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+        </aside>
+
+        <!-- Main Calendar Area -->
+        <div class="calendar-container glass">
+          <!-- Calendar Control Bar -->
+          <div class="calendar-controls">
+            <div class="controls-left">
+              <button id="cal-prev" class="btn-icon-round" title="Zurück">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                </svg>
+              </button>
+              <button id="cal-today" class="btn-secondary">Heute</button>
+              <button id="cal-next" class="btn-icon-round" title="Vorwärts">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                </svg>
+              </button>
+              <h2 id="calendar-title" class="calendar-title">Juni 2026</h2>
+            </div>
+            <div class="controls-right">
+              <button id="add-appointment-btn" class="btn-primary btn-icon-text">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Termin erstellen
+              </button>
+            </div>
+          </div>
+
+          <!-- Dynamic Calendar View Wrapper -->
+          <div id="calendar-view-wrapper" class="calendar-view-wrapper">
+            <!-- Will dynamically mount day, week, or month structures -->
+          </div>
+        </div>
+      </section>
+
+      <!-- User Management Section -->
+      <section id="users-section" class="app-section">
+        <div class="section-container">
+          <div class="grid-two-cols">
+            
+            <!-- Users List Table -->
+            <div class="content-panel glass">
+              <div class="panel-header">
+                <h2>Benutzerliste</h2>
+                <p>Übersicht aller registrierten Nutzer</p>
+              </div>
+              <div class="table-wrapper">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Benutzer</th>
+                      <th>Rolle / ID</th>
+                      <th>Aktion</th>
+                    </tr>
+                  </thead>
+                  <tbody id="users-table-body">
+                    <!-- Dynamically populated -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Manage Forms -->
+            <div class="sidebar-forms">
+              
+              <!-- Add User Form -->
+              <div class="content-panel glass">
+                <div class="panel-header">
+                  <h2>Neuen User anlegen</h2>
+                </div>
+                <form id="create-user-form" class="form-group">
+                  <div class="input-wrapper">
+                    <label for="new-username">Benutzername</label>
+                    <input type="text" id="new-username" required placeholder="z.B. Maria">
+                  </div>
+                  <div class="input-wrapper">
+                    <label for="new-user-pin">PIN (4-6 Ziffern)</label>
+                    <input type="password" id="new-user-pin" pattern="[0-9]{4,6}" inputmode="numeric" required placeholder="1234">
+                  </div>
+                  <div class="input-wrapper">
+                    <label for="new-user-pin-confirm">PIN bestätigen</label>
+                    <input type="password" id="new-user-pin-confirm" pattern="[0-9]{4,6}" inputmode="numeric" required placeholder="1234">
+                  </div>
+                  <button type="submit" class="btn-primary w-full">Benutzer erstellen</button>
+                </form>
+              </div>
+
+              <!-- Change Own PIN Form -->
+              <div class="content-panel glass">
+                <div class="panel-header">
+                  <h2>Eigene PIN ändern</h2>
+                  <p>Passwort für den aktuell angemeldeten Account ändern</p>
+                </div>
+                <form id="change-pin-form" class="form-group">
+                  <div class="input-wrapper">
+                    <label for="current-pin">Aktuelle PIN</label>
+                    <input type="password" id="current-pin" pattern="[0-9]{4,6}" inputmode="numeric" required>
+                  </div>
+                  <div class="input-wrapper">
+                    <label for="new-pin">Neue PIN (4-6 Ziffern)</label>
+                    <input type="password" id="new-pin" pattern="[0-9]{4,6}" inputmode="numeric" required>
+                  </div>
+                  <div class="input-wrapper">
+                    <label for="new-pin-confirm">Neue PIN bestätigen</label>
+                    <input type="password" id="new-pin-confirm" pattern="[0-9]{4,6}" inputmode="numeric" required>
+                  </div>
+                  <button type="submit" class="btn-secondary w-full">PIN aktualisieren</button>
+                </form>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings Section -->
+      <section id="settings-section" class="app-section">
+        <div class="section-container">
+          <div class="grid-two-cols">
+            
+            <!-- GitHub Settings -->
+            <div class="content-panel glass">
+              <div class="panel-header">
+                <h2>GitHub Synchronisation</h2>
+                <p>Verknüpfen Sie ein Repository, um Ihre Termindaten dauerhaft zu speichern.</p>
+              </div>
+              <form id="github-settings-form" class="form-group">
+                <div class="input-wrapper">
+                  <label for="gh-token">GitHub Personal Access Token (PAT)</label>
+                  <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+                  <small class="input-help">Erforderliche Scopes: <code>repo</code> (für private Repos) oder <code>public_repo</code>.</small>
+                </div>
+                
+                <div class="input-wrapper">
+                  <label for="gh-repo">Repository (Besitzer/Name)</label>
+                  <input type="text" id="gh-repo" placeholder="z.B. vjbackhaus/ausbildungskalender">
+                </div>
+
+                <div class="grid-two-cols-nested">
+                  <div class="input-wrapper">
+                    <label for="gh-branch">Branch</label>
+                    <input type="text" id="gh-branch" placeholder="main" value="main">
+                  </div>
+                  <div class="input-wrapper">
+                    <label for="gh-path">Dateipfad im Repo</label>
+                    <input type="text" id="gh-path" placeholder="data.json" value="data.json">
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="button" id="gh-test-btn" class="btn-secondary">Verbindung testen</button>
+                  <button type="submit" class="btn-primary">Speichern & Syncen</button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Data & Configuration Settings -->
+            <div class="sidebar-forms">
+              
+              <!-- Appointment Types / Categories -->
+              <div class="content-panel glass">
+                <div class="panel-header">
+                  <h2>Terminarten & Farben</h2>
+                  <p>Farbcodes für verschiedene Terminarten anpassen</p>
+                </div>
+                <div id="settings-types-list" class="settings-types-list">
+                  <!-- Dynamically populated rows of Type Name + Color Input -->
+                </div>
+                <button id="save-types-btn" class="btn-secondary w-full mt-4">Kategorien & Farben speichern</button>
+              </div>
+
+              <!-- Manual Import/Export -->
+              <div class="content-panel glass">
+                <div class="panel-header">
+                  <h2>Manueller Daten-Export</h2>
+                  <p>Laden Sie eine lokale Sicherungskopie der Daten herunter oder laden Sie eine hoch.</p>
+                </div>
+                <div class="data-backup-actions">
+                  <button id="export-json-btn" class="btn-secondary w-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:6px;">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    Daten als JSON exportieren
+                  </button>
+                  
+                  <div class="file-upload-wrapper mt-3">
+                    <label for="import-json-file" class="btn-secondary w-full text-center block cursor-pointer">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:6px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                      </svg>
+                      JSON-Datei importieren
+                    </label>
+                    <input type="file" id="import-json-file" accept=".json" class="hidden">
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Appointment Details / Create Modal -->
+  <div id="appointment-modal" class="modal-overlay hidden">
+    <div class="modal-box glass">
+      <div class="modal-header">
+        <h2 id="modal-title">Termin erstellen</h2>
+        <button id="modal-close" class="btn-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <form id="appointment-form" class="modal-body form-group">
+        <input type="hidden" id="appointment-id">
+        <input type="hidden" id="appointment-series-id">
+
+        <div class="input-wrapper">
+          <label for="appt-title">Titel / Bezeichnung</label>
+          <input type="text" id="appt-title" required placeholder="z.B. Frühschicht Hauptwache">
+        </div>
+
+        <div class="grid-two-cols-nested">
+          <div class="input-wrapper">
+            <label for="appt-date">Datum (Start)</label>
+            <input type="date" id="appt-date" required>
+          </div>
+          <div class="input-wrapper" id="appt-end-date-wrapper">
+            <label for="appt-end-date">Enddatum</label>
+            <input type="date" id="appt-end-date">
+          </div>
+        </div>
+
+        <div class="grid-two-cols-nested">
+          <div class="input-wrapper">
+            <label for="appt-start-time">Anfangszeit</label>
+            <input type="time" id="appt-start-time" required value="08:00">
+          </div>
+          <div class="input-wrapper">
+            <label for="appt-end-time">Endzeit</label>
+            <input type="time" id="appt-end-time" required value="16:00">
+          </div>
+        </div>
+
+        <div class="grid-two-cols-nested">
+          <div class="input-wrapper">
+            <label for="appt-roster-code">Dienstplankürzel</label>
+            <input type="text" id="appt-roster-code" required placeholder="z.B. DK-1" list="roster-codes-datalist">
+            <datalist id="roster-codes-datalist">
+              <!-- Dynamically populated with existing roster codes -->
+            </datalist>
+          </div>
+          <div class="input-wrapper">
+            <label for="appt-type">Terminart</label>
+            <select id="appt-type" required>
+              <!-- Dynamically populated with type names -->
+            </select>
+          </div>
+        </div>
+
+        <div class="input-wrapper">
+          <label>Individuelle Farbe (Optional)</label>
+          <div class="color-picker-grid">
+            <label class="color-option">
+              <input type="radio" name="appt-color" value="default" checked>
+              <span class="color-dot default-color-dot" title="Standardfarbe der Terminart"></span>
+            </label>
+            <!-- Preset colors -->
+            <label class="color-option">
+              <input type="radio" name="appt-color" value="#3b82f6">
+              <span class="color-dot" style="background-color: #3b82f6;"></span>
+            </label>
+            <label class="color-option">
+              <input type="radio" name="appt-color" value="#ef4444">
+              <span class="color-dot" style="background-color: #ef4444;"></span>
+            </label>
+            <label class="color-option">
+              <input type="radio" name="appt-color" value="#f59e0b">
+              <span class="color-dot" style="background-color: #f59e0b;"></span>
+            </label>
+            <label class="color-option">
+              <input type="radio" name="appt-color" value="#10b981">
+              <span class="color-dot" style="background-color: #10b981;"></span>
+            </label>
+            <label class="color-option">
+              <input type="radio" name="appt-color" value="#8b5cf6">
+              <span class="color-dot" style="background-color: #8b5cf6;"></span>
+            </label>
+            <label class="color-option">
+              <input type="radio" name="appt-color" value="#ec4899">
+              <span class="color-dot" style="background-color: #ec4899;"></span>
+            </label>
+            <!-- Custom color picker -->
+            <label class="color-option custom-color-option">
+              <input type="radio" name="appt-color" id="appt-color-custom-radio" value="custom">
+              <input type="color" id="appt-color-custom-input" value="#ffffff">
+              <span class="color-dot custom-color-display" title="Benutzerdefiniert"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Recurrence settings -->
+        <div class="recurrence-section border-t pt-4 mt-2">
+          <label class="checkbox-wrapper">
+            <input type="checkbox" id="appt-is-recurring">
+            <span class="checkbox-label">Dieser Termin wiederholt sich (Serie)</span>
+          </label>
+
+          <div id="recurrence-details" class="recurrence-details hidden-slide mt-3">
+            <div class="grid-two-cols-nested">
+              <div class="input-wrapper">
+                <label for="recur-frequency">Wiederholung</label>
+                <select id="recur-frequency">
+                  <option value="daily">Täglich</option>
+                  <option value="weekly" selected>Wöchentlich</option>
+                  <option value="monthly">Monatlich</option>
+                </select>
+              </div>
+              <div class="input-wrapper">
+                <label for="recur-interval">Intervall (alle N)</label>
+                <input type="number" id="recur-interval" min="1" value="1">
+              </div>
+            </div>
+
+            <!-- Days of Week (for weekly recurrence) -->
+            <div id="recur-days-weekly" class="input-wrapper mt-2">
+              <label>Wiederholen am</label>
+              <div class="weekdays-selector">
+                <label class="weekday-pill"><input type="checkbox" value="1" checked><span>Mo</span></label>
+                <label class="weekday-pill"><input type="checkbox" value="2"><span>Di</span></label>
+                <label class="weekday-pill"><input type="checkbox" value="3"><span>Mi</span></label>
+                <label class="weekday-pill"><input type="checkbox" value="4"><span>Do</span></label>
+                <label class="weekday-pill"><input type="checkbox" value="5"><span>Fr</span></label>
+                <label class="weekday-pill"><input type="checkbox" value="6"><span>Sa</span></label>
+                <label class="weekday-pill"><input type="checkbox" value="7"><span>So</span></label>
+              </div>
+            </div>
+
+            <!-- Recurrence End -->
+            <div class="input-wrapper mt-2">
+              <label for="recur-end-date">Enddatum der Serie (Optional)</label>
+              <input type="date" id="recur-end-date">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions mt-6">
+          <button type="button" id="appt-delete-btn" class="btn-danger hidden">Termin löschen</button>
+          <div class="spacer"></div>
+          <button type="button" id="appt-cancel-btn" class="btn-secondary">Abbrechen</button>
+          <button type="submit" class="btn-primary">Speichern</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Recurrence Choice Modal (edit/delete decision) -->
+  <div id="recurrence-choice-modal" class="modal-overlay hidden">
+    <div class="modal-box glass max-w-sm">
+      <div class="modal-header">
+        <h2>Terminserie bearbeiten</h2>
+      </div>
+      <div class="modal-body">
+        <p>Dieser Termin ist Teil einer Serie. Möchten Sie nur diesen einzelnen Termin bearbeiten/löschen oder alle Termine dieser Serie?</p>
+        
+        <div class="recurrence-choices-vertical mt-4">
+          <button id="recur-choice-single" class="btn-secondary w-full text-left">
+            <strong>Nur diesen Termin</strong>
+            <span class="block text-xs text-muted">Ändert/Löscht nur den ausgewählten Termin am <span id="recur-choice-date">datum</span>.</span>
+          </button>
+          <button id="recur-choice-all" class="btn-primary w-full text-left mt-2">
+            <strong>Die gesamte Serie</strong>
+            <span class="block text-xs text-muted-light">Ändert/Löscht alle Termine dieser Serie.</span>
+          </button>
+          <button id="recur-choice-cancel" class="btn-secondary w-full mt-4">Abbrechen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
