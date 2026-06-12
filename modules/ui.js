@@ -116,8 +116,20 @@ export function refreshFormSelects() {
     opt.textContent = type.name;
     select.appendChild(opt);
   });
+
+  // If the currently edited appointment has a deleted type, append it as a temporary option
+  if (activeEditingAppt && !types.some(t => t.id === activeEditingAppt.type)) {
+    const opt = document.createElement('option');
+    opt.value = activeEditingAppt.type;
+    opt.textContent = '(Gelöschte Terminart)';
+    select.appendChild(opt);
+  }
   
-  if (currentVal) select.value = currentVal;
+  if (currentVal) {
+    select.value = currentVal;
+  } else if (activeEditingAppt) {
+    select.value = activeEditingAppt.type;
+  }
 
   // Refresh Autocomplete list for Roster codes
   const appointments = storage.getAppointments();
@@ -681,6 +693,7 @@ export function initUIListeners() {
 
   // --- settings view - Categories/Colors Form Submit ---
   document.getElementById('save-types-btn').addEventListener('click', () => {
+    const oldTypes = storage.getAppointmentTypes();
     const names = document.querySelectorAll('.type-name-input');
     const colors = document.querySelectorAll('.type-color-input');
     
@@ -698,6 +711,31 @@ export function initUIListeners() {
     if (updatedTypes.length === 0) {
       showToast('Kategorien dürfen nicht leer sein.', 'warning');
       return;
+    }
+
+    // Find deleted types
+    const deletedTypes = oldTypes.filter(oldT => !updatedTypes.some(newT => newT.id === oldT.id));
+    
+    if (deletedTypes.length > 0) {
+      const appts = storage.getAppointments();
+      let migratedCount = 0;
+      
+      const updatedAppts = appts.map(appt => {
+        const matchingDeletedType = deletedTypes.find(dt => dt.id === appt.type);
+        if (matchingDeletedType) {
+          // Bake the deleted type's color directly into the appointment to preserve it
+          if (!appt.color) {
+            appt.color = matchingDeletedType.color;
+          }
+          migratedCount++;
+        }
+        return appt;
+      });
+      
+      if (migratedCount > 0) {
+        storage.setAppointments(updatedAppts);
+        showToast(`${migratedCount} bestehende Termine wurden farblich fixiert.`, 'info');
+      }
     }
 
     storage.setAppointmentTypes(updatedTypes);
