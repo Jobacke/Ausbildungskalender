@@ -3,8 +3,8 @@
  * Manages view transitions, toasts, modals, inputs, and database import/export flows.
  */
 
-import * as storage from './storage.js';
-import * as calendar from './calendar.js';
+import * as storage from './storage.js?v=1.0.7';
+import * as calendar from './calendar.js?v=1.0.7';
 
 // Global state for appointment modal
 let activeEditingAppt = null; // Hold reference if editing
@@ -96,7 +96,7 @@ export function initNavListeners() {
         calendar.renderCalendar();
       } else if (targetId === 'users-section') {
         // Import auth dynamically to render table without cyclic load bottlenecks
-        import('./auth.js').then(auth => auth.renderUsersTable());
+        import('./auth.js?v=1.0.7').then(auth => auth.renderUsersTable());
       } else if (targetId === 'settings-section') {
         renderSettingsTypesEditor();
         renderSettingsStudentsEditor();
@@ -179,7 +179,7 @@ export function refreshFormSelects() {
  * Populate GitHub settings form from active config
  */
 function populateGitHubForm() {
-  import('./github.js').then(github => {
+  import('./github.js?v=1.0.7').then(github => {
     const cfg = github.getConfig();
     document.getElementById('gh-token').value = cfg.token || '';
     document.getElementById('gh-repo').value = cfg.repo || '';
@@ -871,7 +871,7 @@ export function initUIListeners() {
       return;
     }
 
-    import('./github.js').then(async (github) => {
+    import('./github.js?v=1.0.7').then(async (github) => {
       showLoader('Verbindung mit GitHub wird geprüft...');
       try {
         const res = await github.testConnection({ token, repo, branch, path });
@@ -907,7 +907,7 @@ export function initUIListeners() {
       return;
     }
 
-    import('./github.js').then(async (github) => {
+    import('./github.js?v=1.0.7').then(async (github) => {
       showLoader('Prüfe GitHub Verbindung...');
       try {
         const res = await github.testConnection({ token, repo, branch, path });
@@ -983,12 +983,12 @@ export function initUIListeners() {
 
   // Lock Button in Header
   document.getElementById('lock-btn').addEventListener('click', () => {
-    import('./auth.js').then(auth => auth.lockApp());
+    import('./auth.js?v=1.0.7').then(auth => auth.lockApp());
   });
 
   // GitHub settings - Copy share link
   document.getElementById('gh-copy-link-btn').addEventListener('click', () => {
-    import('./github.js').then(github => {
+    import('./github.js?v=1.0.7').then(github => {
       const cfg = github.getConfig();
       if (!github.isConfigured()) {
         showToast('Bitte konfigurieren und speichern Sie zuerst die GitHub-Verbindung.', 'warning');

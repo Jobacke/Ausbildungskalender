@@ -3,7 +3,7 @@
  * Manages the in-memory calendar database, localStorage cache, and debounced GitHub updates.
  */
 
-import * as github from './github.js';
+import * as github from './github.js?v=1.0.7';
 
 // Global in-memory state
 let db = {
