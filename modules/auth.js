@@ -3,8 +3,8 @@
  * Manages user logins, lock screens, and PIN security (salted SHA-256 hashes).
  */
 
-import * as storage from './storage.js?v=1.1.0';
-import * as ui from './ui.js?v=1.1.0';
+import * as storage from './storage.js?v=1.1.1';
+import * as ui from './ui.js?v=1.1.1';
 
 let currentUser = null;
 let autoLockTimer = null;
@@ -398,7 +398,7 @@ export function initAuthListeners() {
 
     ui.showLoader('Verbindung mit GitHub wird hergestellt...');
     try {
-      const github = await import('./github.js?v=1.1.0');
+      const github = await import('./github.js?v=1.1.1');
       const res = await github.testConnection({ token, repo, branch, path });
 
       // Save connection config
