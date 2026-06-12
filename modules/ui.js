@@ -692,7 +692,7 @@ export function initUIListeners() {
   });
 
   // --- settings view - Categories/Colors Form Submit ---
-  document.getElementById('save-types-btn').addEventListener('click', () => {
+  document.getElementById('save-types-btn').addEventListener('click', async () => {
     const oldTypes = storage.getAppointmentTypes();
     const names = document.querySelectorAll('.type-name-input');
     const colors = document.querySelectorAll('.type-color-input');
@@ -734,12 +734,21 @@ export function initUIListeners() {
       
       if (migratedCount > 0) {
         storage.setAppointments(updatedAppts);
-        showToast(`${migratedCount} bestehende Termine wurden farblich fixiert.`, 'info');
+        // Toast will be shown after the main success message
       }
     }
 
-    storage.setAppointmentTypes(updatedTypes);
-    showToast('Kategorien und Farben gespeichert.', 'success');
+    showLoader('Terminarten werden auf GitHub gespeichert...');
+    try {
+      storage.setAppointmentTypes(updatedTypes);
+      await storage.forceSyncNow();
+      hideLoader();
+      showToast('Kategorien und Farben erfolgreich gespeichert!', 'success');
+    } catch (err) {
+      hideLoader();
+      showToast(`GitHub-Speicherfehler: ${err.message}`, 'danger');
+    }
+
     refreshFormSelects();
     calendar.renderCalendar();
   });
