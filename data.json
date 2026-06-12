@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "users": [
+    {
+      "id": "usr-1781245858922",
+      "username": "jba",
+      "pinHash": "c998643c6cde84406e8930c552f839f7a768fc94c1ba03365800ea6edc25cc2e"
+    }
+  ],
+  "appointmentTypes": [
+    {
+      "id": "dienst",
+      "name": "Ausbildung",
+      "color": "#3b82f6"
+    },
+    {
+      "id": "schulung",
+      "name": "Klinik",
+      "color": "#f59e0b"
+    },
+    {
+      "id": "urlaub",
+      "name": "Urlaub",
+      "color": "#10b981"
+    },
+    {
+      "id": "krank",
+      "name": "Wache",
+      "color": "#ef4444"
+    },
+    {
+      "id": "freizeit",
+      "name": "Krank",
+      "color": "#6b7280"
+    }
+  ],
+  "appointments": []
+}
