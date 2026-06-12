@@ -2,20 +2,20 @@
   "version": 1,
   "users": [
     {
-      "id": "usr-1781245858922",
+      "id": "usr-1781250838577",
       "username": "jba",
-      "pinHash": "c998643c6cde84406e8930c552f839f7a768fc94c1ba03365800ea6edc25cc2e"
+      "pinHash": "dbc8493a4c1d8f2a11add49e049a7426f1d1d5f91c9f0c666c9cf63ff2fc5249"
     }
   ],
   "appointmentTypes": [
     {
       "id": "dienst",
-      "name": "Ausbildung",
+      "name": "Dienst",
       "color": "#3b82f6"
     },
     {
       "id": "schulung",
-      "name": "Klinik",
+      "name": "Schulung",
       "color": "#f59e0b"
     },
     {
@@ -25,13 +25,18 @@
     },
     {
       "id": "krank",
-      "name": "Wache",
+      "name": "Krank",
       "color": "#ef4444"
     },
     {
       "id": "freizeit",
-      "name": "Krank",
+      "name": "Freizeit",
       "color": "#6b7280"
+    },
+    {
+      "id": "schule",
+      "name": "Schule",
+      "color": "#8b5cf6"
     }
   ],
   "appointments": []
