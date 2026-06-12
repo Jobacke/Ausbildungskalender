@@ -3,7 +3,7 @@
  * Manages the in-memory calendar database, localStorage cache, and debounced GitHub updates.
  */
 
-import * as github from './github.js?v=1.0.7';
+import * as github from './github.js?v=1.0.9';
 
 // Global in-memory state
 let db = {
@@ -155,13 +155,10 @@ export function importDatabase(newData) {
   const rawStudentCodes = newData.studentCodes || [];
   const normalizedStudentCodes = rawStudentCodes.map(item => {
     if (typeof item === 'string') {
-      return { code: item.toUpperCase(), color: '#3b82f6' };
+      return item.toUpperCase();
     }
-    return {
-      code: (item.code || '').toUpperCase(),
-      color: item.color || '#3b82f6'
-    };
-  }).filter(item => item.code);
+    return (item.code || '').toUpperCase();
+  }).filter(Boolean);
 
   db = {
     version: newData.version || 1,
@@ -212,13 +209,10 @@ export function getStudentCodes() {
   const codes = db.studentCodes || [];
   return codes.map(item => {
     if (typeof item === 'string') {
-      return { code: item.toUpperCase(), color: '#3b82f6' };
+      return item.toUpperCase();
     }
-    return {
-      code: (item.code || '').toUpperCase(),
-      color: item.color || '#3b82f6'
-    };
-  }).filter(item => item.code);
+    return (item.code || '').toUpperCase();
+  }).filter(Boolean);
 }
 
 export function setStudentCodes(codesList) {

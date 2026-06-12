@@ -3,8 +3,8 @@
  * Manages view states, ranges, date logic, recurring series expansion, and overlapping layout algorithms.
  */
 
-import * as storage from './storage.js?v=1.0.7';
-import * as ui from './ui.js?v=1.0.7';
+import * as storage from './storage.js?v=1.0.9';
+import * as ui from './ui.js?v=1.0.9';
 
 // Calendar view state
 let viewMode = 'week'; // 'day', 'week', 'month', 'custom'
@@ -21,15 +21,6 @@ let rosterSearchQuery = '';
  * Resolves the color of an event, falling back to the appointment type color if no custom color is defined
  */
 export function getEventColor(evt) {
-  if (evt.color) return evt.color;
-
-  // Try to find if there is a color associated with the student (rosterCode)
-  const studentCodes = storage.getStudentCodes();
-  const student = studentCodes.find(s => s.code === evt.rosterCode);
-  if (student && student.color) {
-    return student.color;
-  }
-
   const types = storage.getAppointmentTypes();
   const typeObj = types.find(t => t.id === evt.type);
   return typeObj ? typeObj.color : 'var(--primary)';
@@ -522,15 +513,10 @@ function renderStudentGrid(container, startDateStr, endDateStr) {
     const contentDiv = document.createElement('div');
     contentDiv.className = 'student-header-content';
     
-    const dot = document.createElement('span');
-    dot.className = 'student-header-color-dot';
-    dot.style.backgroundColor = student.color || '#3b82f6';
-    
     const nameSpan = document.createElement('span');
     nameSpan.className = 'student-header-name';
-    nameSpan.textContent = student.code;
+    nameSpan.textContent = student;
 
-    contentDiv.appendChild(dot);
     contentDiv.appendChild(nameSpan);
     th.appendChild(contentDiv);
     headerRow.appendChild(th);
@@ -568,17 +554,17 @@ function renderStudentGrid(container, startDateStr, endDateStr) {
       const cell = document.createElement('td');
       cell.className = 'student-grid-cell';
       cell.dataset.date = dateStr;
-      cell.dataset.student = student.code;
+      cell.dataset.student = student;
 
       // Click cell empty space to create appointment
       cell.addEventListener('click', (e) => {
         // Prevent triggering when clicking an appointment card
         if (e.target.closest('.student-grid-event-card')) return;
-        ui.openAppointmentModalForCreate(dateStr, '08:00', '16:00', student.code);
+        ui.openAppointmentModalForCreate(dateStr, '08:00', '16:00', student);
       });
 
       // Find events matching this student on this day
-      const cellEvents = filtered.filter(evt => evt.instanceDate === dateStr && evt.rosterCode === student.code);
+      const cellEvents = filtered.filter(evt => evt.instanceDate === dateStr && evt.rosterCode === student);
       // Sort events by start time
       cellEvents.sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
 
@@ -595,9 +581,8 @@ function renderStudentGrid(container, startDateStr, endDateStr) {
           const typeObj = types.find(t => t.id === evt.type);
 
           card.innerHTML = `
-            <span class="event-card-title" title="${evt.title}">${evt.title}</span>
-            <span class="event-card-time">${evt.startTime} - ${evt.endTime}</span>
             <span class="event-card-type">${typeObj ? typeObj.name : ''}</span>
+            <span class="event-card-time">${evt.startTime} - ${evt.endTime}</span>
           `;
 
           // Click card to edit appointment
@@ -634,7 +619,7 @@ export function renderRosterFilterList() {
   // Extract unique roster codes from all appointments that are NOT student codes
   const codes = [...new Set(appointments.map(a => a.rosterCode))]
     .filter(Boolean)
-    .filter(code => !studentCodes.some(s => s.code === code))
+    .filter(code => !studentCodes.includes(code))
     .sort();
 
   const container = document.getElementById('roster-filters-list');
@@ -684,10 +669,7 @@ export function renderStudentFilterList() {
     return;
   }
 
-  studentCodes.forEach(student => {
-    const code = student.code;
-    const color = student.color || '#3b82f6';
-
+  studentCodes.forEach(code => {
     // If search filter is active and doesn't match, skip
     if (rosterSearchQuery && !code.toLowerCase().includes(rosterSearchQuery)) {
       return;
@@ -706,15 +688,7 @@ export function renderStudentFilterList() {
 
     const labelSpan = document.createElement('span');
     labelSpan.className = 'filter-item-label';
-
-    const colorInd = document.createElement('span');
-    colorInd.className = 'filter-color-indicator';
-    colorInd.style.backgroundColor = color;
-
-    const textNode = document.createTextNode(code);
-
-    labelSpan.appendChild(colorInd);
-    labelSpan.appendChild(textNode);
+    labelSpan.textContent = code;
 
     wrapper.appendChild(cb);
     wrapper.appendChild(labelSpan);
@@ -770,7 +744,9 @@ export function renderTypeFilterList() {
       else if (appt.recurrence.frequency === 'weekly') frequencyGerman = 'Wöchentlich';
       else if (appt.recurrence.frequency === 'monthly') frequencyGerman = 'Monatlich';
       
-      const label = `${appt.title} (${frequencyGerman})`;
+      const typeObj = types.find(t => t.id === appt.type);
+      const labelText = appt.title || (typeObj ? typeObj.name : 'Termin');
+      const label = `${labelText} (${frequencyGerman})`;
       seriesMap.set(appt.seriesId, {
         id: appt.seriesId,
         label: label,

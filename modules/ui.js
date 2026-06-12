@@ -3,8 +3,8 @@
  * Manages view transitions, toasts, modals, inputs, and database import/export flows.
  */
 
-import * as storage from './storage.js?v=1.0.7';
-import * as calendar from './calendar.js?v=1.0.7';
+import * as storage from './storage.js?v=1.0.9';
+import * as calendar from './calendar.js?v=1.0.9';
 
 // Global state for appointment modal
 let activeEditingAppt = null; // Hold reference if editing
@@ -96,7 +96,7 @@ export function initNavListeners() {
         calendar.renderCalendar();
       } else if (targetId === 'users-section') {
         // Import auth dynamically to render table without cyclic load bottlenecks
-        import('./auth.js?v=1.0.7').then(auth => auth.renderUsersTable());
+        import('./auth.js?v=1.0.9').then(auth => auth.renderUsersTable());
       } else if (targetId === 'settings-section') {
         renderSettingsTypesEditor();
         renderSettingsStudentsEditor();
@@ -150,8 +150,7 @@ export function refreshFormSelects() {
     opt.textContent = '-- Keine Schülerkürzel vorhanden --';
     studentSelect.appendChild(opt);
   } else {
-    studentCodes.forEach(student => {
-      const code = student.code;
+    studentCodes.forEach(code => {
       const opt = document.createElement('option');
       opt.value = code;
       opt.textContent = code;
@@ -161,7 +160,7 @@ export function refreshFormSelects() {
 
   // If the currently edited appointment has initials not present in the current student codes,
   // append it as a temporary option so it doesn't get lost
-  if (activeEditingAppt && activeEditingAppt.rosterCode && !studentCodes.some(s => s.code === activeEditingAppt.rosterCode)) {
+  if (activeEditingAppt && activeEditingAppt.rosterCode && !studentCodes.includes(activeEditingAppt.rosterCode)) {
     const opt = document.createElement('option');
     opt.value = activeEditingAppt.rosterCode;
     opt.textContent = `${activeEditingAppt.rosterCode} (Inaktiv/Alt)`;
@@ -179,7 +178,7 @@ export function refreshFormSelects() {
  * Populate GitHub settings form from active config
  */
 function populateGitHubForm() {
-  import('./github.js?v=1.0.7').then(github => {
+  import('./github.js?v=1.0.9').then(github => {
     const cfg = github.getConfig();
     document.getElementById('gh-token').value = cfg.token || '';
     document.getElementById('gh-repo').value = cfg.repo || '';
@@ -824,20 +823,12 @@ export function initUIListeners() {
 
   // --- settings view - Save student codes ---
   document.getElementById('save-students-btn').addEventListener('click', async () => {
-    const rows = document.querySelectorAll('.student-setting-row');
+    const inputs = document.querySelectorAll('.student-code-input');
     const updatedCodes = [];
-    const seenCodes = new Set();
-    
-    rows.forEach(row => {
-      const codeInput = row.querySelector('.student-code-input');
-      const colorInput = row.querySelector('.student-color-input');
-      if (codeInput) {
-        const val = codeInput.value.trim().toUpperCase();
-        const color = colorInput ? colorInput.value : '#3b82f6';
-        if (val && !seenCodes.has(val)) {
-          seenCodes.add(val);
-          updatedCodes.push({ code: val, color: color });
-        }
+    inputs.forEach(input => {
+      const val = input.value.trim().toUpperCase();
+      if (val && !updatedCodes.includes(val)) {
+        updatedCodes.push(val);
       }
     });
 
@@ -871,7 +862,7 @@ export function initUIListeners() {
       return;
     }
 
-    import('./github.js?v=1.0.7').then(async (github) => {
+    import('./github.js?v=1.0.9').then(async (github) => {
       showLoader('Verbindung mit GitHub wird geprüft...');
       try {
         const res = await github.testConnection({ token, repo, branch, path });
@@ -907,7 +898,7 @@ export function initUIListeners() {
       return;
     }
 
-    import('./github.js?v=1.0.7').then(async (github) => {
+    import('./github.js?v=1.0.9').then(async (github) => {
       showLoader('Prüfe GitHub Verbindung...');
       try {
         const res = await github.testConnection({ token, repo, branch, path });
@@ -983,12 +974,12 @@ export function initUIListeners() {
 
   // Lock Button in Header
   document.getElementById('lock-btn').addEventListener('click', () => {
-    import('./auth.js?v=1.0.7').then(auth => auth.lockApp());
+    import('./auth.js?v=1.0.9').then(auth => auth.lockApp());
   });
 
   // GitHub settings - Copy share link
   document.getElementById('gh-copy-link-btn').addEventListener('click', () => {
-    import('./github.js?v=1.0.7').then(github => {
+    import('./github.js?v=1.0.9').then(github => {
       const cfg = github.getConfig();
       if (!github.isConfigured()) {
         showToast('Bitte konfigurieren und speichern Sie zuerst die GitHub-Verbindung.', 'warning');
@@ -1010,7 +1001,6 @@ export function initUIListeners() {
 
 function createStudentSettingRow(student) {
   const code = typeof student === 'string' ? student : (student?.code || '');
-  const color = typeof student === 'object' && student?.color ? student.color : '#3b82f6';
 
   const row = document.createElement('div');
   row.className = 'student-setting-row';
@@ -1021,19 +1011,6 @@ function createStudentSettingRow(student) {
   inputName.className = 'student-code-input';
   inputName.placeholder = 'z.B. AB';
   row.appendChild(inputName);
-
-  // Color picker wrapper
-  const colorPickerDiv = document.createElement('div');
-  colorPickerDiv.className = 'student-color-picker';
-
-  const inputColor = document.createElement('input');
-  inputColor.type = 'color';
-  inputColor.value = color;
-  inputColor.className = 'student-color-input';
-  inputColor.title = 'Farbe für Schülerkürzel';
-  
-  colorPickerDiv.appendChild(inputColor);
-  row.appendChild(colorPickerDiv);
 
   // Delete button
   const deleteBtn = document.createElement('button');

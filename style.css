@@ -1423,7 +1423,7 @@ input:focus, select:focus {
 
 .student-setting-row {
   display: grid;
-  grid-template-columns: 1fr 38px 36px;
+  grid-template-columns: 1fr 36px;
   gap: 0.5rem;
   align-items: center;
   width: 100%;
