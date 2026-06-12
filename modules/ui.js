@@ -10,6 +10,12 @@ import * as calendar from './calendar.js';
 let activeEditingAppt = null; // Hold reference if editing
 let recurrenceChoicePromise = null; // Resolves when recurrence dialog choice is made
 
+function timeToMinutes(timeStr) {
+  if (!timeStr) return 0;
+  const [h, m] = timeStr.split(':').map(Number);
+  return h * 60 + m;
+}
+
 /**
  * Toast Notification System
  */
@@ -93,6 +99,7 @@ export function initNavListeners() {
         import('./auth.js').then(auth => auth.renderUsersTable());
       } else if (targetId === 'settings-section') {
         renderSettingsTypesEditor();
+        renderSettingsStudentsEditor();
         populateGitHubForm();
       }
     });
@@ -131,17 +138,40 @@ export function refreshFormSelects() {
     select.value = activeEditingAppt.type;
   }
 
-  // Refresh Autocomplete list for Roster codes
-  const appointments = storage.getAppointments();
-  const datalist = document.getElementById('roster-codes-datalist');
-  const uniqueCodes = [...new Set(appointments.map(a => a.rosterCode))].filter(Boolean);
-  
-  datalist.innerHTML = '';
-  uniqueCodes.forEach(code => {
+  // Populate student code select
+  const studentSelect = document.getElementById('appt-roster-code');
+  const studentCodes = storage.getStudentCodes();
+  const currentStudentVal = studentSelect.value;
+  studentSelect.innerHTML = '';
+
+  if (studentCodes.length === 0) {
     const opt = document.createElement('option');
-    opt.value = code;
-    datalist.appendChild(opt);
-  });
+    opt.value = '';
+    opt.textContent = '-- Keine Schülerkürzel vorhanden --';
+    studentSelect.appendChild(opt);
+  } else {
+    studentCodes.forEach(code => {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = code;
+      studentSelect.appendChild(opt);
+    });
+  }
+
+  // If the currently edited appointment has initials not present in the current student codes,
+  // append it as a temporary option so it doesn't get lost
+  if (activeEditingAppt && activeEditingAppt.rosterCode && !studentCodes.includes(activeEditingAppt.rosterCode)) {
+    const opt = document.createElement('option');
+    opt.value = activeEditingAppt.rosterCode;
+    opt.textContent = `${activeEditingAppt.rosterCode} (Inaktiv/Alt)`;
+    studentSelect.appendChild(opt);
+  }
+
+  if (currentStudentVal && (studentCodes.includes(currentStudentVal) || (activeEditingAppt && activeEditingAppt.rosterCode === currentStudentVal))) {
+    studentSelect.value = currentStudentVal;
+  } else if (activeEditingAppt && activeEditingAppt.rosterCode) {
+    studentSelect.value = activeEditingAppt.rosterCode;
+  }
 }
 
 /**
@@ -271,7 +301,6 @@ export function openAppointmentModalForCreate(dateStr, startTime = '08:00', endT
   // End date default same day
   const apptEndDateInput = document.getElementById('appt-end-date');
   apptEndDateInput.value = dateStr;
-  document.getElementById('appt-end-date-wrapper').classList.add('hidden'); // hidden for non-series
 
   document.getElementById('appt-start-time').value = startTime;
   document.getElementById('appt-end-time').value = endTime;
@@ -308,7 +337,8 @@ export function openAppointmentModalForEdit(appt) {
   document.getElementById('appointment-series-id').value = appt.seriesId || '';
   
   document.getElementById('appt-title').value = appt.title;
-  document.getElementById('appt-date').value = appt.instanceDate || appt.date;
+  document.getElementById('appt-date').value = appt.date;
+  document.getElementById('appt-end-date').value = appt.endDate || appt.date;
   
   document.getElementById('appt-start-time').value = appt.startTime;
   document.getElementById('appt-end-time').value = appt.endTime;
@@ -369,8 +399,7 @@ export function openAppointmentModalForEdit(appt) {
   } else {
     recurCheckbox.checked = false;
     recurDetails.classList.add('hidden-slide');
-    apptEndDateWrapper.classList.add('hidden');
-    apptEndDateInput.value = appt.instanceDate || appt.date;
+    apptEndDateInput.value = appt.endDate || appt.date;
   }
 
   // Show delete button
@@ -399,6 +428,9 @@ export function initUIListeners() {
 
   // Calendar filter resets
   document.getElementById('clear-roster-filters').addEventListener('click', () => {
+    calendar.resetAllFilters();
+  });
+  document.getElementById('clear-student-filters').addEventListener('click', () => {
     calendar.resetAllFilters();
   });
   document.getElementById('clear-type-filters').addEventListener('click', () => {
@@ -489,10 +521,16 @@ export function initUIListeners() {
     
     const title = document.getElementById('appt-title').value.trim();
     const date = document.getElementById('appt-date').value;
+    const endDate = document.getElementById('appt-end-date').value || date;
     const startTime = document.getElementById('appt-start-time').value;
     const endTime = document.getElementById('appt-end-time').value;
     const rosterCode = document.getElementById('appt-roster-code').value.trim().toUpperCase();
     const type = document.getElementById('appt-type').value;
+
+    if (new Date(endDate + 'T00:00:00') < new Date(date + 'T00:00:00')) {
+      showToast('Das Enddatum darf nicht vor dem Startdatum liegen.', 'warning');
+      return;
+    }
 
     if (timeToMinutes(startTime) >= timeToMinutes(endTime)) {
       showToast('Die Endzeit muss nach der Anfangszeit liegen.', 'warning');
@@ -533,7 +571,7 @@ export function initUIListeners() {
       // CREATE NEW
       const newAppt = {
         id: `evt-${Date.now()}`,
-        title, date, startTime, endTime, rosterCode, type, color,
+        title, date, endDate, startTime, endTime, rosterCode, type, color,
         seriesId: isRec ? `ser-${Date.now()}` : null,
         recurrence,
         exceptions: []
@@ -610,6 +648,7 @@ export function initUIListeners() {
           if (appt.id === activeEditingAppt.id) {
             appt.title = title;
             appt.date = date;
+            appt.endDate = endDate;
             appt.startTime = startTime;
             appt.endTime = endTime;
             appt.rosterCode = rosterCode;
@@ -769,6 +808,42 @@ export function initUIListeners() {
     row.querySelector('.type-name-input').focus();
   });
 
+  // --- settings view - Add new student code row ---
+  document.getElementById('add-student-btn').addEventListener('click', () => {
+    const container = document.getElementById('settings-students-list');
+    const row = createStudentSettingRow('');
+    container.appendChild(row);
+    row.querySelector('input').focus();
+  });
+
+  // --- settings view - Save student codes ---
+  document.getElementById('save-students-btn').addEventListener('click', async () => {
+    const inputs = document.querySelectorAll('.student-code-input');
+    const updatedCodes = [];
+    inputs.forEach(input => {
+      const val = input.value.trim().toUpperCase();
+      if (val && !updatedCodes.includes(val)) {
+        updatedCodes.push(val);
+      }
+    });
+
+    showLoader('Schülerkürzel werden auf GitHub gespeichert...');
+    try {
+      storage.setStudentCodes(updatedCodes);
+      await storage.forceSyncNow();
+      hideLoader();
+      showToast('Schülerkürzel erfolgreich gespeichert!', 'success');
+    } catch (err) {
+      hideLoader();
+      showToast(`GitHub-Speicherfehler: ${err.message}`, 'danger');
+    }
+
+    refreshFormSelects();
+    calendar.renderStudentFilterList();
+    calendar.renderRosterFilterList();
+    calendar.renderCalendar();
+  });
+
   // --- settings view - GitHub Form Submit ---
   document.getElementById('github-settings-form').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -879,6 +954,7 @@ export function initUIListeners() {
           const activeNavBtn = document.querySelector('.nav-btn.active');
           if (activeNavBtn && activeNavBtn.getAttribute('data-target') === 'settings-section') {
             renderSettingsTypesEditor();
+            renderSettingsStudentsEditor();
           }
         }
       } catch (err) {
@@ -917,4 +993,51 @@ export function initUIListeners() {
     });
   });
 }
+
+function createStudentSettingRow(code) {
+  const row = document.createElement('div');
+  row.className = 'student-setting-row';
+
+  const inputName = document.createElement('input');
+  inputName.type = 'text';
+  inputName.value = code;
+  inputName.className = 'student-code-input';
+  inputName.placeholder = 'z.B. AB';
+
+  row.appendChild(inputName);
+
+  // Delete button
+  const deleteBtn = document.createElement('button');
+  deleteBtn.type = 'button';
+  deleteBtn.className = 'btn-icon btn-delete-type';
+  deleteBtn.style.color = 'var(--danger)';
+  deleteBtn.title = 'Schülerkürzel löschen';
+  deleteBtn.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+      <polyline points="3 6 5 6 21 6"></polyline>
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+      <line x1="10" y1="11" x2="10" y2="17"></line>
+      <line x1="14" y1="11" x2="14" y2="17"></line>
+    </svg>
+  `;
+  deleteBtn.addEventListener('click', () => {
+    row.remove();
+  });
+  row.appendChild(deleteBtn);
+
+  return row;
+}
+
+export function renderSettingsStudentsEditor() {
+  const codes = storage.getStudentCodes();
+  const container = document.getElementById('settings-students-list');
+  if (!container) return;
+  container.innerHTML = '';
+
+  codes.forEach(code => {
+    const row = createStudentSettingRow(code);
+    container.appendChild(row);
+  });
+}
+
 export { promptRecurrenceChoice };

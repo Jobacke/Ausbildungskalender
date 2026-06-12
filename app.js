@@ -100,6 +100,7 @@ window.addEventListener('app-login-success', () => {
   
   // Re-render sidebar filters lists
   calendar.renderRosterFilterList();
+  calendar.renderStudentFilterList();
   calendar.renderTypeFilterList();
   
   // Draw current calendar view

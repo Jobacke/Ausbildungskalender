@@ -17,7 +17,8 @@ let db = {
     { id: 'freizeit', name: 'Freizeit', color: '#6b7280' },
     { id: 'schule', name: 'Schule', color: '#8b5cf6' }
   ],
-  appointments: []
+  appointments: [],
+  studentCodes: []
 };
 
 // Debounce timer for saving to GitHub
@@ -154,6 +155,7 @@ export function importDatabase(newData) {
   db = {
     version: newData.version || 1,
     users: newData.users,
+    studentCodes: newData.studentCodes || [],
     appointmentTypes: newData.appointmentTypes || db.appointmentTypes,
     appointments: newData.appointments
   };
@@ -192,5 +194,14 @@ export function getAppointments() {
 
 export function setAppointments(apptList) {
   db.appointments = apptList;
+  scheduleGitHubSync();
+}
+
+export function getStudentCodes() {
+  return db.studentCodes || [];
+}
+
+export function setStudentCodes(codesList) {
+  db.studentCodes = codesList;
   scheduleGitHubSync();
 }

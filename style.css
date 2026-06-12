@@ -1421,6 +1421,19 @@ input:focus, select:focus {
   cursor: pointer;
 }
 
+.student-setting-row {
+  display: grid;
+  grid-template-columns: 1fr 36px;
+  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+}
+
+.student-code-input {
+  width: 100%;
+  min-width: 0;
+}
+
 /* --- Modal Overlays --- */
 .modal-overlay {
   position: fixed;

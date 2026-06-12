@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css?v=1.0.5">
+  <link rel="stylesheet" href="/style.css?v=1.0.6">
 </head>
 <body class="dark-theme">
   <!-- Loader Overlay -->
@@ -222,6 +222,17 @@
                 <input type="date" id="custom-end-date">
               </div>
               <button id="apply-custom-range" class="btn-secondary btn-sm">Anwenden</button>
+            </div>
+          </div>
+
+          <!-- Student Code Filter -->
+          <div class="sidebar-block">
+            <div class="sidebar-block-header">
+              <h3>Schülerkürzel</h3>
+              <button id="clear-student-filters" class="btn-link">Alle</button>
+            </div>
+            <div id="student-filters-list" class="filter-checklist">
+              <!-- Populated dynamically -->
             </div>
           </div>
 
@@ -441,6 +452,24 @@
                 <button id="save-types-btn" class="btn-primary w-full mt-2">Kategorien & Farben speichern</button>
               </div>
 
+              <!-- Student Initials (Schülerkürzel) -->
+              <div class="content-panel glass">
+                <div class="panel-header">
+                  <h2>Schülerkürzel</h2>
+                  <p>Liste der Schülerkürzel verwalten</p>
+                </div>
+                <div id="settings-students-list" class="settings-types-list">
+                  <!-- Dynamically populated rows of Student Initials -->
+                </div>
+                <button id="add-student-btn" class="btn-secondary w-full mt-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:6px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                  Schülerkürzel hinzufügen
+                </button>
+                <button id="save-students-btn" class="btn-primary w-full mt-2">Schülerkürzel speichern</button>
+              </div>
+
               <!-- Manual Import/Export -->
               <div class="content-panel glass">
                 <div class="panel-header">
@@ -519,11 +548,10 @@
 
         <div class="grid-two-cols-nested">
           <div class="input-wrapper">
-            <label for="appt-roster-code">Dienstplankürzel</label>
-            <input type="text" id="appt-roster-code" required placeholder="z.B. DK-1" list="roster-codes-datalist">
-            <datalist id="roster-codes-datalist">
-              <!-- Dynamically populated with existing roster codes -->
-            </datalist>
+            <label for="appt-roster-code">Schülerkürzel</label>
+            <select id="appt-roster-code" required>
+              <!-- Dynamically populated with student codes -->
+            </select>
           </div>
           <div class="input-wrapper">
             <label for="appt-type">Terminart</label>

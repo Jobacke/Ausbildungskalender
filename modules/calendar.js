@@ -74,6 +74,7 @@ export function toggleTypeFilter(type, isChecked) {
 export function setRosterSearch(query) {
   rosterSearchQuery = query.toLowerCase();
   renderRosterFilterList(); // re-filter the sidebar checklist
+  renderStudentFilterList();
   renderCalendar();
 }
 
@@ -85,6 +86,7 @@ export function resetAllFilters() {
   
   // Refresh sidebars
   renderRosterFilterList();
+  renderStudentFilterList();
   renderTypeFilterList();
   
   renderCalendar();
@@ -141,13 +143,36 @@ export function getExpandedAppointments(rangeStartStr, rangeEndStr) {
   appointments.forEach(appt => {
     // If NOT recurring
     if (!appt.recurrence || appt.recurrence.frequency === 'none') {
-      const apptDate = new Date(appt.date + 'T00:00:00');
-      if (apptDate >= rangeStart && apptDate <= rangeEnd) {
-        expanded.push({
-          ...appt,
-          instanceDate: appt.date,
-          isOccurrence: false
-        });
+      if (appt.endDate && appt.endDate !== appt.date) {
+        const start = new Date(appt.date + 'T00:00:00');
+        const end = new Date(appt.endDate + 'T23:59:59');
+        
+        const loopStart = new Date(Math.max(start.getTime(), rangeStart.getTime()));
+        const loopEnd = new Date(Math.min(end.getTime(), rangeEnd.getTime()));
+        
+        if (loopStart <= loopEnd) {
+          let currentLoop = new Date(loopStart);
+          currentLoop.setHours(0,0,0,0);
+          
+          while (currentLoop <= loopEnd) {
+            const currentStr = formatDateString(currentLoop);
+            expanded.push({
+              ...appt,
+              instanceDate: currentStr,
+              isOccurrence: currentStr !== appt.date
+            });
+            currentLoop.setDate(currentLoop.getDate() + 1);
+          }
+        }
+      } else {
+        const apptDate = new Date(appt.date + 'T00:00:00');
+        if (apptDate >= rangeStart && apptDate <= rangeEnd) {
+          expanded.push({
+            ...appt,
+            instanceDate: appt.date,
+            isOccurrence: false
+          });
+        }
       }
       return;
     }
@@ -905,7 +930,7 @@ function renderCustomView(container, startDateStr, endDateStr) {
         <span class="custom-view-event-time">${evt.startTime} - ${evt.endTime}</span>
         <div class="custom-view-event-details">
           <span class="custom-view-event-title">${evt.title}</span>
-          <span class="custom-view-event-roster">Dienstplankürzel: <strong>${evt.rosterCode}</strong></span>
+          <span class="custom-view-event-roster">Kürzel: <strong>${evt.rosterCode}</strong></span>
         </div>
         <span class="custom-view-event-type">${typeObj ? typeObj.name : 'Sonstiges'}</span>
       `;
@@ -929,19 +954,62 @@ function renderCustomView(container, startDateStr, endDateStr) {
  */
 export function renderRosterFilterList() {
   const appointments = storage.getAppointments();
+  const studentCodes = storage.getStudentCodes();
   
-  // Extract unique roster codes from all appointments
-  const codes = [...new Set(appointments.map(a => a.rosterCode))].filter(Boolean).sort();
+  // Extract unique roster codes from all appointments that are NOT student codes
+  const codes = [...new Set(appointments.map(a => a.rosterCode))]
+    .filter(Boolean)
+    .filter(code => !studentCodes.includes(code))
+    .sort();
 
   const container = document.getElementById('roster-filters-list');
+  if (!container) return;
   container.innerHTML = '';
 
   if (codes.length === 0) {
-    container.innerHTML = '<span class="text-xs text-muted-light">Keine Kürzel vorhanden</span>';
+    container.innerHTML = '<span class="text-xs text-muted-light">Keine Dienstplankürzel vorhanden</span>';
     return;
   }
 
   codes.forEach(code => {
+    // If search filter is active and doesn't match, skip
+    if (rosterSearchQuery && !code.toLowerCase().includes(rosterSearchQuery)) {
+      return;
+    }
+
+    const wrapper = document.createElement('label');
+    wrapper.className = 'checkbox-wrapper';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = code;
+    cb.checked = activeRosterFilters.has(code);
+    cb.addEventListener('change', (e) => {
+      toggleRosterFilter(code, e.target.checked);
+    });
+
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'filter-item-label';
+    labelSpan.textContent = code;
+
+    wrapper.appendChild(cb);
+    wrapper.appendChild(labelSpan);
+    container.appendChild(wrapper);
+  });
+}
+
+export function renderStudentFilterList() {
+  const studentCodes = storage.getStudentCodes();
+  const container = document.getElementById('student-filters-list');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (studentCodes.length === 0) {
+    container.innerHTML = '<span class="text-xs text-muted-light">Keine Schülerkürzel vorhanden</span>';
+    return;
+  }
+
+  studentCodes.forEach(code => {
     // If search filter is active and doesn't match, skip
     if (rosterSearchQuery && !code.toLowerCase().includes(rosterSearchQuery)) {
       return;
