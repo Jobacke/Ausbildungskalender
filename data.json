@@ -41,7 +41,17 @@
   ],
   "appointments": [],
   "studentCodes": [
-    "BSC",
-    "AFI"
+    {
+      "code": "BSC",
+      "color": "#ff2600"
+    },
+    {
+      "code": "AFI",
+      "color": "#3b82f6"
+    },
+    {
+      "code": "AHA",
+      "color": "#3b82f6"
+    }
   ]
 }
