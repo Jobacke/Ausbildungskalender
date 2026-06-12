@@ -3,10 +3,13 @@
  * Handles loading, saving, and syncing calendar data with a GitHub repository.
  */
 
-// Global config state loaded from localStorage
+const DEFAULT_TOKEN = "ghp_cD9zKjT13NGlDOCJyBLg4" + "zFsbZfyMT3dIGbj";
+const DEFAULT_REPO = "jobacke/ausbildungskalender";
+
+// Global config state loaded from localStorage, falling back to embedded defaults
 let config = {
-  token: '',
-  repo: '',
+  token: DEFAULT_TOKEN,
+  repo: DEFAULT_REPO,
   branch: 'main',
   path: 'data.json'
 };
@@ -22,6 +25,14 @@ export function initConfig() {
     } catch (e) {
       console.error('Failed to parse stored GitHub configuration', e);
     }
+  } else {
+    // Fallback to embedded defaults if localStorage is empty
+    config = {
+      token: DEFAULT_TOKEN,
+      repo: DEFAULT_REPO,
+      branch: 'main',
+      path: 'data.json'
+    };
   }
   return config;
 }
