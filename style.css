@@ -1374,7 +1374,7 @@ input:focus, select:focus {
 
 .type-setting-row {
   display: grid;
-  grid-template-columns: 1fr 100px;
+  grid-template-columns: 1fr 50px 40px;
   gap: 1rem;
   align-items: center;
 }

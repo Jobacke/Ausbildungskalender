@@ -17,6 +17,16 @@ let activeRosterFilters = new Set();
 let activeTypeFilters = new Set();
 let rosterSearchQuery = '';
 
+/**
+ * Resolves the color of an event, falling back to the appointment type color if no custom color is defined
+ */
+export function getEventColor(evt) {
+  if (evt.color) return evt.color;
+  const types = storage.getAppointmentTypes();
+  const typeObj = types.find(t => t.id === evt.type);
+  return typeObj ? typeObj.color : 'var(--primary)';
+}
+
 export function getViewMode() { return viewMode; }
 export function getCurrentDate() { return currentDate; }
 
@@ -501,7 +511,7 @@ function renderDayView(container, dateStr) {
 
     const block = document.createElement('div');
     block.className = 'appt-block-absolute';
-    block.style.backgroundColor = evt.color || 'var(--primary)';
+    block.style.backgroundColor = getEventColor(evt);
     block.style.top = `${top}px`;
     block.style.height = `${height}px`;
     
@@ -649,7 +659,7 @@ function renderWeekView(container, mondayDate) {
 
       const block = document.createElement('div');
       block.className = 'appt-block-absolute';
-      block.style.backgroundColor = evt.color || 'var(--primary)';
+      block.style.backgroundColor = getEventColor(evt);
       block.style.top = `${top}px`;
       block.style.height = `${height}px`;
 
@@ -794,7 +804,7 @@ function renderMonthView(container, focusDate) {
     dayEvents.forEach(evt => {
       const apptEl = document.createElement('div');
       apptEl.className = 'appt-block';
-      apptEl.style.backgroundColor = evt.color || 'var(--primary)';
+      apptEl.style.backgroundColor = getEventColor(evt);
       apptEl.style.borderLeftColor = 'rgba(0,0,0,0.3)';
 
       apptEl.innerHTML = `
@@ -885,7 +895,7 @@ function renderCustomView(container, startDateStr, endDateStr) {
     dayEvts.forEach(evt => {
       const item = document.createElement('div');
       item.className = 'custom-view-event-item';
-      item.style.backgroundColor = evt.color || 'var(--primary)';
+      item.style.backgroundColor = getEventColor(evt);
 
       // Find type details
       const types = storage.getAppointmentTypes();
@@ -1010,7 +1020,7 @@ export function renderTypeFilterList() {
       seriesMap.set(appt.seriesId, {
         id: appt.seriesId,
         label: label,
-        color: appt.color || 'var(--primary)'
+        color: getEventColor(appt)
       });
     }
   });
