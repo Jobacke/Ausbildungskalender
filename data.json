@@ -39,5 +39,9 @@
       "color": "#8b5cf6"
     }
   ],
-  "appointments": []
+  "appointments": [],
+  "studentCodes": [
+    "BSC",
+    "AFI"
+  ]
 }
