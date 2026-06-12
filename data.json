@@ -21,22 +21,22 @@
     {
       "id": "dienst",
       "name": "Klinik",
-      "color": "#3b82f6"
+      "color": "#f73b3b"
     },
     {
       "id": "urlaub",
       "name": "Urlaub",
-      "color": "#10b981"
+      "color": "#1031b7"
     },
     {
       "id": "krank",
       "name": "Wache",
-      "color": "#ef4444"
+      "color": "#42f06e"
     },
     {
       "id": "schule",
       "name": "Schule",
-      "color": "#8b5cf6"
+      "color": "#dff820"
     }
   ],
   "appointments": [
