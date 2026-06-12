@@ -1624,8 +1624,12 @@ input:focus, select:focus {
     flex-shrink: 0;
     order: 2;
   }
+  .app-section {
+    padding: 0.75rem !important;
+  }
   .calendar-container {
     order: 1;
+    padding: 0.75rem !important;
   }
   .main-header {
     flex-direction: column;
@@ -1646,11 +1650,15 @@ input:focus, select:focus {
     align-items: stretch;
     gap: 0.75rem;
   }
-  .controls-left, .controls-right {
-    width: 100%;
-  }
   .controls-left {
+    width: 100%;
     justify-content: space-between;
+  }
+  .controls-right {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
   }
   .controls-right button {
     width: 100%;
@@ -1798,4 +1806,111 @@ input:focus, select:focus {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 600;
+}
+
+/* --- Print Styles for PDF Export --- */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  
+  /* Hide non-calendar UI components */
+  .main-header,
+  .sidebar-filters,
+  .calendar-controls button,
+  .nav-btn,
+  .btn-icon,
+  .btn-secondary,
+  .btn-primary,
+  .sync-indicator,
+  .user-badge {
+    display: none !important;
+  }
+  
+  /* Reset shell layouts to natural flow */
+  .app-shell,
+  .app-main,
+  #calendar-section,
+  .calendar-container {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .calendar-controls {
+    display: block !important;
+    margin-bottom: 2rem !important;
+    text-align: center !important;
+  }
+
+  .calendar-title {
+    font-size: 2rem !important;
+    color: #000000 !important;
+    margin: 0 0 1rem 0 !important;
+    font-weight: 800 !important;
+  }
+
+  /* Make grid print-friendly */
+  .student-grid-wrapper {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    border: 1px solid #ccc !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  .student-grid-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  .student-grid-table th, 
+  .student-grid-table td {
+    border: 1px solid #bbb !important;
+    color: #000000 !important;
+    padding: 6px !important;
+    font-size: 11px !important;
+    background: transparent !important;
+  }
+
+  .student-grid-table th {
+    background: #f0f0f0 !important;
+    font-weight: bold !important;
+  }
+
+  .student-grid-cell-events {
+    gap: 4px !important;
+  }
+
+  .student-grid-event-card {
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    padding: 4px 6px !important;
+    font-size: 10px !important;
+    border-radius: 4px !important;
+    page-break-inside: avoid !important;
+    /* Force background colors to print */
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  .event-card-type {
+    font-weight: bold !important;
+  }
+
+  .event-card-time {
+    color: #444 !important;
+  }
 }

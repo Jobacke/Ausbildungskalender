@@ -3,8 +3,8 @@
  * Manages view states, ranges, date logic, recurring series expansion, and overlapping layout algorithms.
  */
 
-import * as storage from './storage.js?v=1.0.9';
-import * as ui from './ui.js?v=1.0.9';
+import * as storage from './storage.js?v=1.1.0';
+import * as ui from './ui.js?v=1.1.0';
 
 // Calendar view state
 let viewMode = 'week'; // 'day', 'week', 'month', 'custom'
