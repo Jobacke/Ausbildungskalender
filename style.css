@@ -605,6 +605,7 @@ input:focus, select:focus {
 /* --- App Shell Structure --- */
 .app-shell {
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -1614,6 +1615,23 @@ input:focus, select:focus {
 }
 
 @media (max-width: 768px) {
+  .app-main {
+    display: flex;
+    flex-direction: column;
+  }
+  .app-section {
+    position: relative !important;
+    display: none;
+    flex: 1;
+    width: 100%;
+    padding: 0.75rem !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transition: none !important;
+  }
+  .app-section.active {
+    display: flex !important;
+  }
   #calendar-section {
     flex-direction: column;
     overflow-y: auto;
@@ -1624,12 +1642,12 @@ input:focus, select:focus {
     flex-shrink: 0;
     order: 2;
   }
-  .app-section {
-    padding: 0.75rem !important;
-  }
   .calendar-container {
     order: 1;
     padding: 0.75rem !important;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
   }
   .main-header {
     flex-direction: column;
