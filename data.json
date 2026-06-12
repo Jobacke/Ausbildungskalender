@@ -39,22 +39,7 @@
       "color": "#8b5cf6"
     }
   ],
-  "appointments": [
-    {
-      "id": "evt-1781280434867",
-      "title": "Obersendling",
-      "date": "2026-06-08",
-      "endDate": "2026-06-12",
-      "startTime": "12:00",
-      "endTime": "20:00",
-      "rosterCode": "AFI",
-      "type": "krank",
-      "color": "",
-      "seriesId": null,
-      "recurrence": null,
-      "exceptions": []
-    }
-  ],
+  "appointments": [],
   "studentCodes": [
     "BSC",
     "AFI"
