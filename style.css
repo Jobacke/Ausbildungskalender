@@ -196,6 +196,11 @@ button:active {
   height: 20px;
 }
 
+.btn-icon-text svg {
+  width: 18px;
+  height: 18px;
+}
+
 .btn-link {
   background: transparent;
   padding: 0;
@@ -1585,6 +1590,10 @@ input:focus, select:focus {
     width: 100%;
     height: auto;
     flex-shrink: 0;
+    order: 2;
+  }
+  .calendar-container {
+    order: 1;
   }
   .main-header {
     flex-direction: column;
