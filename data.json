@@ -76,7 +76,7 @@
       "startTime": "08:00",
       "endTime": "16:00",
       "rosterCode": "AFI",
-      "type": "krank",
+      "type": "dienst",
       "color": "",
       "seriesId": null,
       "recurrence": null,
