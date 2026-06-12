@@ -10,13 +10,8 @@
   "appointmentTypes": [
     {
       "id": "dienst",
-      "name": "Dienst",
+      "name": "Klinik",
       "color": "#3b82f6"
-    },
-    {
-      "id": "schulung",
-      "name": "Schulung",
-      "color": "#f59e0b"
     },
     {
       "id": "urlaub",
@@ -25,7 +20,7 @@
     },
     {
       "id": "krank",
-      "name": "Krank",
+      "name": "Wache",
       "color": "#ef4444"
     },
     {
