@@ -372,6 +372,61 @@ export function initAuthListeners() {
     }
   });
 
+  // Toggle repository connection views
+  document.getElementById('auth-show-connect-btn').addEventListener('click', () => {
+    document.getElementById('onboarding-welcome-view').classList.add('hidden');
+    document.getElementById('onboarding-connect-view').classList.remove('hidden');
+  });
+
+  document.getElementById('auth-hide-connect-btn').addEventListener('click', () => {
+    document.getElementById('onboarding-connect-view').classList.add('hidden');
+    document.getElementById('onboarding-welcome-view').classList.remove('hidden');
+  });
+
+  // Connect existing repository form
+  document.getElementById('onboarding-connect-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const token = document.getElementById('onboard-gh-token').value.trim();
+    const repo = document.getElementById('onboard-gh-repo').value.trim();
+    const branch = document.getElementById('onboard-gh-branch').value.trim() || 'main';
+    const path = document.getElementById('onboard-gh-path').value.trim() || 'data.json';
+
+    if (!token || !repo) {
+      ui.showToast('GitHub Token und Repository sind erforderlich.', 'warning');
+      return;
+    }
+
+    ui.showLoader('Verbindung mit GitHub wird hergestellt...');
+    try {
+      const github = await import('./github.js');
+      const res = await github.testConnection({ token, repo, branch, path });
+
+      // Save connection config
+      github.saveConfig({ token, repo, branch, path });
+
+      // Fetch database (loads users & appointments from GitHub)
+      const db = await storage.initDatabase();
+
+      ui.hideLoader();
+
+      if (db.users && db.users.length > 0) {
+        ui.showToast('Erfolgreich verbunden! Wählen Sie Ihren Benutzer aus.', 'success');
+        // Reset view visibility within onboarding card
+        document.getElementById('onboarding-connect-view').classList.add('hidden');
+        document.getElementById('onboarding-welcome-view').classList.remove('hidden');
+        // Transition back to user card grid screen
+        renderUserSelection();
+      } else {
+        ui.showToast('Erfolgreich verbunden! Keine bestehenden Benutzer gefunden. Bitte legen Sie den ersten Benutzer an.', 'info');
+        document.getElementById('onboarding-connect-view').classList.add('hidden');
+        document.getElementById('onboarding-welcome-view').classList.remove('hidden');
+      }
+    } catch (err) {
+      ui.hideLoader();
+      ui.showToast(`Verbindungsfehler: ${err.message}`, 'danger');
+    }
+  });
+
   // Admin Create User Form
   document.getElementById('create-user-form').addEventListener('submit', async (e) => {
     e.preventDefault();

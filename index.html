@@ -86,23 +86,57 @@
 
       <!-- Onboarding screen (shown when NO users exist) -->
       <div id="auth-onboarding" class="auth-onboarding hidden">
-        <h2>Ersteinrichtung</h2>
-        <p>Erstellen Sie den ersten Benutzer, um die App zu nutzen.</p>
-        <form id="onboarding-form" class="form-group">
-          <div class="input-wrapper">
-            <label for="onboard-username">Benutzername</label>
-            <input type="text" id="onboard-username" required placeholder="z.B. Johannes">
+        <div id="onboarding-welcome-view">
+          <h2>Ersteinrichtung</h2>
+          <p>Erstellen Sie den ersten Benutzer, um die App zu nutzen.</p>
+          <form id="onboarding-form" class="form-group">
+            <div class="input-wrapper">
+              <label for="onboard-username">Benutzername</label>
+              <input type="text" id="onboard-username" required placeholder="z.B. Johannes">
+            </div>
+            <div class="input-wrapper">
+              <label for="onboard-pin">PIN (4-6 Ziffern)</label>
+              <input type="password" id="onboard-pin" pattern="[0-9]{4,6}" inputmode="numeric" required placeholder="1234">
+            </div>
+            <div class="input-wrapper">
+              <label for="onboard-pin-confirm">PIN bestätigen</label>
+              <input type="password" id="onboard-pin-confirm" pattern="[0-9]{4,6}" inputmode="numeric" required placeholder="1234">
+            </div>
+            <button type="submit" class="btn-primary w-full">Einrichten & Anmelden</button>
+          </form>
+          <div class="onboarding-actions border-t pt-4 mt-4 text-center">
+            <button id="auth-show-connect-btn" class="btn-link text-xs">Bestehendes GitHub-Repository verbinden</button>
           </div>
-          <div class="input-wrapper">
-            <label for="onboard-pin">PIN (4-6 Ziffern)</label>
-            <input type="password" id="onboard-pin" pattern="[0-9]{4,6}" inputmode="numeric" required placeholder="1234">
+        </div>
+
+        <div id="onboarding-connect-view" class="hidden">
+          <h2>GitHub verbinden</h2>
+          <p>Verbinden Sie Ihr bestehendes Repository, um Benutzer und Termine zu laden.</p>
+          <form id="onboarding-connect-form" class="form-group">
+            <div class="input-wrapper">
+              <label for="onboard-gh-token">GitHub Personal Access Token (PAT)</label>
+              <input type="password" id="onboard-gh-token" required placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+            </div>
+            <div class="input-wrapper">
+              <label for="onboard-gh-repo">Repository (Besitzer/Name)</label>
+              <input type="text" id="onboard-gh-repo" required placeholder="z.B. vjbackhaus/ausbildungskalender">
+            </div>
+            <div class="grid-two-cols-nested">
+              <div class="input-wrapper">
+                <label for="onboard-gh-branch">Branch</label>
+                <input type="text" id="onboard-gh-branch" value="main">
+              </div>
+              <div class="input-wrapper">
+                <label for="onboard-gh-path">Dateipfad</label>
+                <input type="text" id="onboard-gh-path" value="data.json">
+              </div>
+            </div>
+            <button type="submit" class="btn-primary w-full">Verbinden & Laden</button>
+          </form>
+          <div class="onboarding-actions border-t pt-4 mt-4 text-center">
+            <button id="auth-hide-connect-btn" class="btn-link text-xs">Zurück zur Ersteinrichtung</button>
           </div>
-          <div class="input-wrapper">
-            <label for="onboard-pin-confirm">PIN bestätigen</label>
-            <input type="password" id="onboard-pin-confirm" pattern="[0-9]{4,6}" inputmode="numeric" required placeholder="1234">
-          </div>
-          <button type="submit" class="btn-primary">Einrichten & Anmelden</button>
-        </form>
+        </div>
       </div>
     </div>
   </div>
