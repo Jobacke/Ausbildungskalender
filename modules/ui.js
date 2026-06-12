@@ -150,7 +150,8 @@ export function refreshFormSelects() {
     opt.textContent = '-- Keine Schülerkürzel vorhanden --';
     studentSelect.appendChild(opt);
   } else {
-    studentCodes.forEach(code => {
+    studentCodes.forEach(student => {
+      const code = student.code;
       const opt = document.createElement('option');
       opt.value = code;
       opt.textContent = code;
@@ -160,14 +161,14 @@ export function refreshFormSelects() {
 
   // If the currently edited appointment has initials not present in the current student codes,
   // append it as a temporary option so it doesn't get lost
-  if (activeEditingAppt && activeEditingAppt.rosterCode && !studentCodes.includes(activeEditingAppt.rosterCode)) {
+  if (activeEditingAppt && activeEditingAppt.rosterCode && !studentCodes.some(s => s.code === activeEditingAppt.rosterCode)) {
     const opt = document.createElement('option');
     opt.value = activeEditingAppt.rosterCode;
     opt.textContent = `${activeEditingAppt.rosterCode} (Inaktiv/Alt)`;
     studentSelect.appendChild(opt);
   }
 
-  if (currentStudentVal && (studentCodes.includes(currentStudentVal) || (activeEditingAppt && activeEditingAppt.rosterCode === currentStudentVal))) {
+  if (currentStudentVal && (studentCodes.some(s => s.code === currentStudentVal) || (activeEditingAppt && activeEditingAppt.rosterCode === currentStudentVal))) {
     studentSelect.value = currentStudentVal;
   } else if (activeEditingAppt && activeEditingAppt.rosterCode) {
     studentSelect.value = activeEditingAppt.rosterCode;
@@ -287,7 +288,7 @@ function closeRecurrenceChoiceModal() {
 /**
  * Opens Appointment Modal for creation
  */
-export function openAppointmentModalForCreate(dateStr, startTime = '08:00', endTime = '16:00') {
+export function openAppointmentModalForCreate(dateStr, startTime = '08:00', endTime = '16:00', preselectedStudentCode = '') {
   activeEditingAppt = null;
   
   document.getElementById('modal-title').textContent = 'Termin erstellen';
@@ -304,9 +305,14 @@ export function openAppointmentModalForCreate(dateStr, startTime = '08:00', endT
 
   document.getElementById('appt-start-time').value = startTime;
   document.getElementById('appt-end-time').value = endTime;
-  document.getElementById('appt-roster-code').value = '';
   
   refreshFormSelects();
+
+  if (preselectedStudentCode) {
+    document.getElementById('appt-roster-code').value = preselectedStudentCode;
+  } else {
+    document.getElementById('appt-roster-code').value = '';
+  }
   
   // Default color radio selection
   document.querySelector('input[name="appt-color"][value="default"]').checked = true;
@@ -818,12 +824,20 @@ export function initUIListeners() {
 
   // --- settings view - Save student codes ---
   document.getElementById('save-students-btn').addEventListener('click', async () => {
-    const inputs = document.querySelectorAll('.student-code-input');
+    const rows = document.querySelectorAll('.student-setting-row');
     const updatedCodes = [];
-    inputs.forEach(input => {
-      const val = input.value.trim().toUpperCase();
-      if (val && !updatedCodes.includes(val)) {
-        updatedCodes.push(val);
+    const seenCodes = new Set();
+    
+    rows.forEach(row => {
+      const codeInput = row.querySelector('.student-code-input');
+      const colorInput = row.querySelector('.student-color-input');
+      if (codeInput) {
+        const val = codeInput.value.trim().toUpperCase();
+        const color = colorInput ? colorInput.value : '#3b82f6';
+        if (val && !seenCodes.has(val)) {
+          seenCodes.add(val);
+          updatedCodes.push({ code: val, color: color });
+        }
       }
     });
 
@@ -994,7 +1008,10 @@ export function initUIListeners() {
   });
 }
 
-function createStudentSettingRow(code) {
+function createStudentSettingRow(student) {
+  const code = typeof student === 'string' ? student : (student?.code || '');
+  const color = typeof student === 'object' && student?.color ? student.color : '#3b82f6';
+
   const row = document.createElement('div');
   row.className = 'student-setting-row';
 
@@ -1003,15 +1020,27 @@ function createStudentSettingRow(code) {
   inputName.value = code;
   inputName.className = 'student-code-input';
   inputName.placeholder = 'z.B. AB';
-
   row.appendChild(inputName);
+
+  // Color picker wrapper
+  const colorPickerDiv = document.createElement('div');
+  colorPickerDiv.className = 'student-color-picker';
+
+  const inputColor = document.createElement('input');
+  inputColor.type = 'color';
+  inputColor.value = color;
+  inputColor.className = 'student-color-input';
+  inputColor.title = 'Farbe für Schülerkürzel';
+  
+  colorPickerDiv.appendChild(inputColor);
+  row.appendChild(colorPickerDiv);
 
   // Delete button
   const deleteBtn = document.createElement('button');
   deleteBtn.type = 'button';
   deleteBtn.className = 'btn-icon btn-delete-type';
   deleteBtn.style.color = 'var(--danger)';
-  deleteBtn.title = 'Schülerkürzel löschen';
+  deleteBtn.title = 'Schülerkürzel - Eintrag löschen';
   deleteBtn.innerHTML = `
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
       <polyline points="3 6 5 6 21 6"></polyline>
@@ -1034,8 +1063,8 @@ export function renderSettingsStudentsEditor() {
   if (!container) return;
   container.innerHTML = '';
 
-  codes.forEach(code => {
-    const row = createStudentSettingRow(code);
+  codes.forEach(student => {
+    const row = createStudentSettingRow(student);
     container.appendChild(row);
   });
 }

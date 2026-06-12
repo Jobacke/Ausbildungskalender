@@ -1423,7 +1423,7 @@ input:focus, select:focus {
 
 .student-setting-row {
   display: grid;
-  grid-template-columns: 1fr 36px;
+  grid-template-columns: 1fr 38px 36px;
   gap: 0.5rem;
   align-items: center;
   width: 100%;
@@ -1432,6 +1432,25 @@ input:focus, select:focus {
 .student-code-input {
   width: 100%;
   min-width: 0;
+}
+
+.student-color-picker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+}
+
+.student-color-picker input[type="color"] {
+  border: none;
+  background: transparent;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
 /* --- Modal Overlays --- */
@@ -1636,4 +1655,147 @@ input:focus, select:focus {
   .controls-right button {
     width: 100%;
   }
+}
+
+/* --- Student Grid / Agenda View --- */
+.student-grid-wrapper {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-glass);
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  position: relative;
+  box-shadow: var(--shadow-glass);
+}
+
+.student-grid-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.student-grid-table th, 
+.student-grid-table td {
+  padding: 0.75rem;
+  border: 1px solid var(--border-glass);
+  vertical-align: top;
+  min-width: 160px;
+}
+
+.student-grid-table th {
+  background: rgba(13, 19, 33, 0.9);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--text-main);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(12px);
+  border-bottom: 2px solid var(--border-glass-bright);
+}
+
+/* Date column is sticky left */
+.student-grid-table th:first-child,
+.student-grid-table td:first-child {
+  position: sticky;
+  left: 0;
+  background: rgba(9, 13, 22, 0.95);
+  z-index: 11;
+  min-width: 120px;
+  width: 120px;
+  font-weight: 500;
+  border-right: 2px solid var(--border-glass-bright);
+}
+
+.student-grid-table th:first-child {
+  z-index: 12;
+}
+
+.student-grid-table tr:hover td {
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.student-grid-table td:first-child.today {
+  border-left: 4px solid var(--primary);
+  color: var(--primary-hover);
+}
+
+.student-header-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.student-header-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.student-header-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.student-grid-cell {
+  min-height: 90px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.student-grid-cell:hover {
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.student-grid-cell-events {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.student-grid-event-card {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  color: #fff;
+  border-left: 3px solid rgba(0, 0, 0, 0.25);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  transition: transform var(--transition-fast), filter var(--transition-fast);
+}
+
+.student-grid-event-card:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+.event-card-title {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-card-time {
+  opacity: 0.9;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.event-card-type {
+  font-size: 0.65rem;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
 }

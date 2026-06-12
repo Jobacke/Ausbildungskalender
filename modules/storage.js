@@ -152,10 +152,21 @@ export function importDatabase(newData) {
     throw new Error('Die JSON-Datei entspricht nicht dem erwarteten Ausbildungskalender-Format.');
   }
 
+  const rawStudentCodes = newData.studentCodes || [];
+  const normalizedStudentCodes = rawStudentCodes.map(item => {
+    if (typeof item === 'string') {
+      return { code: item.toUpperCase(), color: '#3b82f6' };
+    }
+    return {
+      code: (item.code || '').toUpperCase(),
+      color: item.color || '#3b82f6'
+    };
+  }).filter(item => item.code);
+
   db = {
     version: newData.version || 1,
     users: newData.users,
-    studentCodes: newData.studentCodes || [],
+    studentCodes: normalizedStudentCodes,
     appointmentTypes: newData.appointmentTypes || db.appointmentTypes,
     appointments: newData.appointments
   };
@@ -198,7 +209,16 @@ export function setAppointments(apptList) {
 }
 
 export function getStudentCodes() {
-  return db.studentCodes || [];
+  const codes = db.studentCodes || [];
+  return codes.map(item => {
+    if (typeof item === 'string') {
+      return { code: item.toUpperCase(), color: '#3b82f6' };
+    }
+    return {
+      code: (item.code || '').toUpperCase(),
+      color: item.color || '#3b82f6'
+    };
+  }).filter(item => item.code);
 }
 
 export function setStudentCodes(codesList) {

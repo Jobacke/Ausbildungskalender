@@ -22,6 +22,14 @@ let rosterSearchQuery = '';
  */
 export function getEventColor(evt) {
   if (evt.color) return evt.color;
+
+  // Try to find if there is a color associated with the student (rosterCode)
+  const studentCodes = storage.getStudentCodes();
+  const student = studentCodes.find(s => s.code === evt.rosterCode);
+  if (student && student.color) {
+    return student.color;
+  }
+
   const types = storage.getAppointmentTypes();
   const typeObj = types.find(t => t.id === evt.type);
   return typeObj ? typeObj.color : 'var(--primary)';
@@ -398,14 +406,15 @@ export function renderCalendar() {
   const titleEl = document.getElementById('calendar-title');
   const now = new Date(currentDate);
 
+  let startDateStr = '';
+  let endDateStr = '';
+
   if (viewMode === 'day') {
-    const dateStr = formatDateString(now);
+    startDateStr = formatDateString(now);
+    endDateStr = startDateStr;
     
-    // Set Header Title
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     titleEl.textContent = now.toLocaleDateString('de-DE', options);
-    
-    renderDayView(wrapper, dateStr);
     
   } else if (viewMode === 'week') {
     // Find Monday of the current week
@@ -415,15 +424,23 @@ export function renderCalendar() {
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
     
+    startDateStr = formatDateString(monday);
+    endDateStr = formatDateString(sunday);
+    
     titleEl.textContent = `KW ${getWeekNumber(monday)}, ${monday.getFullYear()}`;
     
-    renderWeekView(wrapper, monday);
-    
   } else if (viewMode === 'month') {
+    // First and last day of the month
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    
+    startDateStr = formatDateString(firstDay);
+    endDateStr = formatDateString(lastDay);
+
     const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
     titleEl.textContent = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
-    
-    renderMonthView(wrapper, now);
     
   } else if (viewMode === 'custom') {
     if (!customStartDate || !customEndDate) {
@@ -441,511 +458,169 @@ export function renderCalendar() {
       return;
     }
 
+    startDateStr = customStartDate;
+    endDateStr = customEndDate;
+
     const start = new Date(customStartDate);
     const end = new Date(customEndDate);
     titleEl.textContent = `${start.toLocaleDateString('de-DE')} - ${end.toLocaleDateString('de-DE')}`;
-    
-    renderCustomView(wrapper, customStartDate, customEndDate);
   }
+
+  // Render the student grid timetable
+  renderStudentGrid(wrapper, startDateStr, endDateStr);
 
   // Proactively rebuild filters checkboxes in sidebar in case code details changed
   renderRosterFilterList();
+  renderStudentFilterList();
   renderTypeFilterList();
 }
 
 /**
- * Renders the calendar Day View
+ * Renders the unified Student Agenda Grid
  */
-function renderDayView(container, dateStr) {
-  // Day Grid Structure: Left hour labels, Right column
-  const grid = document.createElement('div');
-  grid.className = 'day-view-grid';
-
-  // Header
-  const labelHeader = document.createElement('div');
-  labelHeader.className = 'grid-header-cell';
-  labelHeader.textContent = 'Zeit';
-  labelHeader.style.gridColumn = '1';
-  labelHeader.style.gridRow = '1';
+function renderStudentGrid(container, startDateStr, endDateStr) {
+  const studentCodes = storage.getStudentCodes();
   
-  const colHeader = document.createElement('div');
-  colHeader.className = 'day-view-header-cell';
-  colHeader.style.gridColumn = '2';
-  colHeader.style.gridRow = '1';
-  
-  // Format day header
-  const d = new Date(dateStr + 'T00:00:00');
-  colHeader.textContent = d.toLocaleDateString('de-DE', { weekday: 'long' });
-
-  grid.appendChild(labelHeader);
-  grid.appendChild(colHeader);
-
-  // Hour Rows (24 hours: 00:00 - 23:00)
-  const columnsContainer = document.createElement('div');
-  columnsContainer.className = 'week-column';
-  columnsContainer.style.gridColumn = '2';
-  columnsContainer.style.gridRow = '2 / span 24';
-  // Attach date context for clicking
-  columnsContainer.dataset.date = dateStr;
-  columnsContainer.addEventListener('click', (e) => {
-    // Avoid double clicks triggers when clicking actual events
-    if (e.target.closest('.appt-block-absolute')) return;
-    
-    // Find clicked hour
-    const rect = columnsContainer.getBoundingClientRect();
-    const clickY = e.clientY - rect.top;
-    const clickedHour = Math.floor(clickY / 60);
-    const hourStr = String(clickedHour).padStart(2, '0') + ':00';
-    const endHourStr = String(Math.min(clickedHour + 1, 23)).padStart(2, '0') + ':00';
-    
-    ui.openAppointmentModalForCreate(dateStr, hourStr, endHourStr);
-  });
-
-  // Draw background hour lines
-  for (let hour = 0; hour < 24; hour++) {
-    // Left Label
-    const hourLabel = document.createElement('div');
-    hourLabel.className = 'hour-label-cell';
-    hourLabel.textContent = `${String(hour).padStart(2, '0')}:00`;
-    hourLabel.style.gridColumn = '1';
-    hourLabel.style.gridRow = `${hour + 2}`;
-    grid.appendChild(hourLabel);
-    
-    // Row background line inside column
-    const bgLine = document.createElement('div');
-    bgLine.className = 'week-cell-bg-line';
-    columnsContainer.appendChild(bgLine);
-  }
-
-  // Draw Appointments
-  const expanded = getExpandedAppointments(dateStr, dateStr);
-  const filtered = getFilteredAppointments(expanded);
-  const positioned = layoutDayEvents(filtered);
-
-  const apptContainer = document.createElement('div');
-  apptContainer.className = 'week-appt-container';
-
-  positioned.forEach(evt => {
-    const startMins = timeToMinutes(evt.startTime);
-    const endMins = timeToMinutes(evt.endTime);
-    const duration = endMins - startMins;
-
-    // Y positioning: 1 hour = 60px -> 1 minute = 1px
-    const top = startMins;
-    const height = Math.max(duration, 20); // min height 20px
-
-    const block = document.createElement('div');
-    block.className = 'appt-block-absolute';
-    block.style.backgroundColor = getEventColor(evt);
-    block.style.top = `${top}px`;
-    block.style.height = `${height}px`;
-    
-    // X Positioning side-by-side
-    const widthPct = 94 / evt.totalCols;
-    const leftPct = (evt.relColIndex * widthPct) + 1;
-    block.style.width = `${widthPct}%`;
-    block.style.left = `${leftPct}%`;
-
-    block.innerHTML = `
-      <div class="appt-title">${evt.title}</div>
-      <div class="appt-block-time">${evt.startTime} - ${evt.endTime}</div>
-      <div class="appt-block-roster">${evt.rosterCode}</div>
-    `;
-
-    block.addEventListener('click', (e) => {
-      e.stopPropagation();
-      ui.openAppointmentModalForEdit(evt);
-    });
-
-    apptContainer.appendChild(block);
-  });
-
-  // Append single column
-  grid.appendChild(columnsContainer);
-  columnsContainer.appendChild(apptContainer);
-  container.appendChild(grid);
-
-  // Auto-scroll to 07:00 on render for better initial focus
-  setTimeout(() => {
-    container.scrollTop = 7 * 60;
-  }, 10);
-}
-
-/**
- * Renders the calendar Week View
- */
-function renderWeekView(container, mondayDate) {
-  const grid = document.createElement('div');
-  grid.className = 'week-view-grid';
-
-  // Hours label header space
-  const cornerCell = document.createElement('div');
-  cornerCell.className = 'grid-header-cell';
-  cornerCell.textContent = 'Zeit';
-  cornerCell.style.gridColumn = '1';
-  cornerCell.style.gridRow = '1';
-  grid.appendChild(cornerCell);
-
-  // 7 Weekday columns headers
-  const daysDates = [];
-  const todayStr = formatDateString(new Date());
-
-  for (let i = 0; i < 7; i++) {
-    const dayDate = new Date(mondayDate);
-    dayDate.setDate(mondayDate.getDate() + i);
-    const dateStr = formatDateString(dayDate);
-    daysDates.push(dateStr);
-
-    const headCell = document.createElement('div');
-    headCell.className = 'week-view-header-cell';
-    headCell.style.gridColumn = `${i + 2}`;
-    headCell.style.gridRow = '1';
-    if (dateStr === todayStr) {
-      headCell.classList.add('today');
-    }
-
-    const name = document.createElement('span');
-    name.className = 'weekday-name';
-    name.textContent = dayDate.toLocaleDateString('de-DE', { weekday: 'short' });
-
-    const num = document.createElement('span');
-    num.className = 'weekday-date';
-    num.textContent = dayDate.getDate();
-
-    headCell.appendChild(name);
-    headCell.appendChild(num);
-    grid.appendChild(headCell);
-  }
-
-  // Create columns list
-  const cols = [];
-  for (let i = 0; i < 7; i++) {
-    const col = document.createElement('div');
-    col.className = 'week-column';
-    col.style.gridColumn = `${i + 2}`;
-    col.style.gridRow = '2 / span 24';
-    if (daysDates[i] === todayStr) {
-      col.classList.add('today');
-    }
-    col.dataset.date = daysDates[i];
-    
-    // Clicking grid to create
-    col.addEventListener('click', (e) => {
-      if (e.target.closest('.appt-block-absolute')) return;
-      const rect = col.getBoundingClientRect();
-      const clickY = e.clientY - rect.top;
-      const clickedHour = Math.floor(clickY / 60);
-      const hourStr = String(clickedHour).padStart(2, '0') + ':00';
-      const endHourStr = String(Math.min(clickedHour + 1, 23)).padStart(2, '0') + ':00';
-      ui.openAppointmentModalForCreate(daysDates[i], hourStr, endHourStr);
-    });
-
-    cols.push(col);
-  }
-
-  // Fill in time lines row by row
-  for (let hour = 0; hour < 24; hour++) {
-    // Left Label
-    const hourLabel = document.createElement('div');
-    hourLabel.className = 'hour-label-cell';
-    hourLabel.textContent = `${String(hour).padStart(2, '0')}:00`;
-    hourLabel.style.gridColumn = '1';
-    hourLabel.style.gridRow = `${hour + 2}`;
-    grid.appendChild(hourLabel);
-
-    // Draw row segments inside columns
-    cols.forEach(col => {
-      const line = document.createElement('div');
-      line.className = 'week-cell-bg-line';
-      col.appendChild(line);
-    });
-  }
-
-  // Fetch all expanded events for the week range
-  const expanded = getExpandedAppointments(daysDates[0], daysDates[6]);
-  const filtered = getFilteredAppointments(expanded);
-
-  // Group events by day to calculate overlapping layout
-  for (let i = 0; i < 7; i++) {
-    const dayDateStr = daysDates[i];
-    const dayEvents = filtered.filter(e => e.instanceDate === dayDateStr);
-    const positioned = layoutDayEvents(dayEvents);
-
-    const apptContainer = document.createElement('div');
-    apptContainer.className = 'week-appt-container';
-
-    positioned.forEach(evt => {
-      const startMins = timeToMinutes(evt.startTime);
-      const endMins = timeToMinutes(evt.endTime);
-      const duration = endMins - startMins;
-
-      const top = startMins;
-      const height = Math.max(duration, 20);
-
-      const block = document.createElement('div');
-      block.className = 'appt-block-absolute';
-      block.style.backgroundColor = getEventColor(evt);
-      block.style.top = `${top}px`;
-      block.style.height = `${height}px`;
-
-      const widthPct = 94 / evt.totalCols;
-      const leftPct = (evt.relColIndex * widthPct) + 1;
-      block.style.width = `${widthPct}%`;
-      block.style.left = `${leftPct}%`;
-
-      block.innerHTML = `
-        <div class="appt-title">${evt.title}</div>
-        <div class="appt-block-time">${evt.startTime} - ${evt.endTime}</div>
-        <div class="appt-block-roster">${evt.rosterCode}</div>
-      `;
-
-      block.addEventListener('click', (e) => {
-        e.stopPropagation();
-        ui.openAppointmentModalForEdit(evt);
-      });
-
-      apptContainer.appendChild(block);
-    });
-
-    cols[i].appendChild(apptContainer);
-  }
-
-  // Append columns to grid
-  cols.forEach(col => grid.appendChild(col));
-  container.appendChild(grid);
-
-  // Focus scroll to 07:00
-  setTimeout(() => {
-    container.scrollTop = 7 * 60;
-  }, 10);
-}
-
-/**
- * Renders the calendar Month View
- */
-function renderMonthView(container, focusDate) {
-  const grid = document.createElement('div');
-  grid.className = 'month-view-grid';
-
-  // 1. Headers: Week Number corner, then Mon-Sun
-  const corners = document.createElement('div');
-  corners.className = 'grid-header-cell';
-  corners.textContent = 'KW';
-  grid.appendChild(corners);
-
-  const weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
-  weekdays.forEach(day => {
-    const cell = document.createElement('div');
-    cell.className = 'grid-header-cell';
-    cell.textContent = day;
-    grid.appendChild(cell);
-  });
-
-  // Calculate Month Boundaries
-  const year = focusDate.getFullYear();
-  const month = focusDate.getMonth();
-  
-  // First day of month
-  const firstDay = new Date(year, month, 1);
-  // Last day of month
-  const lastDay = new Date(year, month + 1, 0);
-
-  // Find Monday of the first week of the month grid
-  // jsDay: 0=Sun, 1=Mon, ..., 6=Sat
-  let startOffset = firstDay.getDay();
-  // Adjust Monday offset: if Sunday, offset is 6. If Mon, offset is 0. If Tue, offset is 1.
-  let paddingDays = startOffset === 0 ? 6 : startOffset - 1;
-  
-  const gridStart = new Date(firstDay);
-  gridStart.setDate(firstDay.getDate() - paddingDays);
-
-  // Find Sunday of the last week of the month grid
-  let endOffset = lastDay.getDay();
-  let paddingEnd = endOffset === 0 ? 0 : 7 - endOffset;
-
-  const gridEnd = new Date(lastDay);
-  gridEnd.setDate(lastDay.getDate() + paddingEnd);
-
-  // Fetch all expanded events inside this full month grid range
-  const gridStartStr = formatDateString(gridStart);
-  const gridEndStr = formatDateString(gridEnd);
-  
-  const expanded = getExpandedAppointments(gridStartStr, gridEndStr);
-  const filtered = getFilteredAppointments(expanded);
-
-  // Loop week by week to draw cells
-  const loopDate = new Date(gridStart);
-  const todayStr = formatDateString(new Date());
-
-  while (loopDate <= gridEnd) {
-    // Render Week Number (only once per row/week)
-    if (loopDate.getDay() === 1 || loopDate.getTime() === gridStart.getTime()) {
-      const weekCell = document.createElement('div');
-      weekCell.className = 'week-num-cell';
-      weekCell.textContent = getWeekNumber(loopDate);
-      grid.appendChild(weekCell);
-    }
-
-    const cellDateStr = formatDateString(loopDate);
-    
-    // Day Cell container
-    const cell = document.createElement('div');
-    cell.className = 'day-cell';
-    if (loopDate.getMonth() !== month) {
-      cell.classList.add('other-month');
-    }
-    if (cellDateStr === todayStr) {
-      cell.classList.add('today');
-    }
-
-    // Pass date string as data attribute
-    cell.dataset.date = cellDateStr;
-    cell.addEventListener('click', (e) => {
-      if (e.target.closest('.appt-block')) return;
-      ui.openAppointmentModalForCreate(cellDateStr, '08:00', '16:00');
-    });
-
-    // Day header inside cell
-    const header = document.createElement('div');
-    header.className = 'day-cell-header';
-    
-    const num = document.createElement('span');
-    num.className = 'day-number';
-    num.textContent = loopDate.getDate();
-    header.appendChild(num);
-
-    cell.appendChild(header);
-
-    // Day events container
-    const evtsContainer = document.createElement('div');
-    evtsContainer.className = 'day-cell-events';
-
-    // Get events for this day
-    const dayEvents = filtered.filter(e => e.instanceDate === cellDateStr);
-    
-    // Sort events by start time
-    dayEvents.sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
-
-    dayEvents.forEach(evt => {
-      const apptEl = document.createElement('div');
-      apptEl.className = 'appt-block';
-      apptEl.style.backgroundColor = getEventColor(evt);
-      apptEl.style.borderLeftColor = 'rgba(0,0,0,0.3)';
-
-      apptEl.innerHTML = `
-        <span class="appt-title">${evt.title}</span>
-        <span class="appt-block-time">${evt.startTime} (${evt.rosterCode})</span>
-      `;
-
-      apptEl.addEventListener('click', (e) => {
-        e.stopPropagation();
-        ui.openAppointmentModalForEdit(evt);
-      });
-
-      evtsContainer.appendChild(apptEl);
-    });
-
-    cell.appendChild(evtsContainer);
-    grid.appendChild(cell);
-
-    // Increment day
-    loopDate.setDate(loopDate.getDate() + 1);
-  }
-
-  container.appendChild(grid);
-}
-
-/**
- * Renders Custom View (scrollable list of days with events)
- */
-function renderCustomView(container, startDateStr, endDateStr) {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'custom-view-list';
-
-  const expanded = getExpandedAppointments(startDateStr, endDateStr);
-  const filtered = getFilteredAppointments(expanded);
-
-  if (filtered.length === 0) {
+  if (studentCodes.length === 0) {
     container.innerHTML = `
       <div class="no-events-placeholder">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.771m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
         </svg>
-        <h3>Keine Termine gefunden</h3>
-        <p>Im ausgewählten Zeitraum liegen keine Termine, die Ihren Filtern entsprechen.</p>
+        <h3>Keine Schüler konfiguriert</h3>
+        <p>Bitte fügen Sie in den <strong>Einstellungen</strong> unter <strong>Schülerkürzel</strong> Schüler hinzu, um den Kalender anzuzeigen.</p>
       </div>
     `;
     return;
   }
 
-  // Group events by date
-  const eventsByDate = {};
-  filtered.forEach(evt => {
-    if (!eventsByDate[evt.instanceDate]) {
-      eventsByDate[evt.instanceDate] = [];
-    }
-    eventsByDate[evt.instanceDate].push(evt);
+  // Fetch and expand appointments for the selected date range
+  const expanded = getExpandedAppointments(startDateStr, endDateStr);
+  const filtered = getFilteredAppointments(expanded);
+
+  // Generate table wrapper
+  const wrapper = document.createElement('div');
+  wrapper.className = 'student-grid-wrapper';
+
+  const table = document.createElement('table');
+  table.className = 'student-grid-table';
+
+  // 1. Table Header Row
+  const thead = document.createElement('thead');
+  const headerRow = document.createElement('tr');
+
+  // Top-left corner cell
+  const cornerTh = document.createElement('th');
+  cornerTh.textContent = 'Tag / Datum';
+  headerRow.appendChild(cornerTh);
+
+  // Student header cells
+  studentCodes.forEach(student => {
+    const th = document.createElement('th');
+    th.className = 'student-header';
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'student-header-content';
+    
+    const dot = document.createElement('span');
+    dot.className = 'student-header-color-dot';
+    dot.style.backgroundColor = student.color || '#3b82f6';
+    
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'student-header-name';
+    nameSpan.textContent = student.code;
+
+    contentDiv.appendChild(dot);
+    contentDiv.appendChild(nameSpan);
+    th.appendChild(contentDiv);
+    headerRow.appendChild(th);
   });
 
-  // Sort dates
-  const sortedDates = Object.keys(eventsByDate).sort();
+  thead.appendChild(headerRow);
+  table.appendChild(thead);
 
-  sortedDates.forEach(dateStr => {
-    const dayDate = new Date(dateStr + 'T00:00:00');
-    const dayEvts = eventsByDate[dateStr];
+  // 2. Table Body Rows (Iterate date range day by day)
+  const tbody = document.createElement('tbody');
+  
+  const start = new Date(startDateStr + 'T00:00:00');
+  const end = new Date(endDateStr + 'T00:00:00');
+  const todayStr = formatDateString(new Date());
+
+  let loopDate = new Date(start);
+  while (loopDate <= end) {
+    const dateStr = formatDateString(loopDate);
+    const row = document.createElement('tr');
     
-    // Sort day events by start time
-    dayEvts.sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
-
-    const card = document.createElement('div');
-    card.className = 'custom-view-day-card';
-
-    const header = document.createElement('div');
-    header.className = 'custom-view-day-header';
+    // Row Date Cell
+    const dateTd = document.createElement('td');
+    if (dateStr === todayStr) {
+      dateTd.className = 'today';
+    }
     
-    const title = document.createElement('h3');
-    title.textContent = dayDate.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const weekday = loopDate.toLocaleDateString('de-DE', { weekday: 'short' });
+    const dayAndMonth = loopDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+    
+    dateTd.innerHTML = `<strong>${weekday}</strong><br><span class="text-xs text-muted">${dayAndMonth}</span>`;
+    row.appendChild(dateTd);
 
-    const info = document.createElement('span');
-    info.className = 'day-info';
-    info.textContent = `KW ${getWeekNumber(dayDate)} - ${dayEvts.length} Termin(e)`;
+    // Student cells for this day
+    studentCodes.forEach(student => {
+      const cell = document.createElement('td');
+      cell.className = 'student-grid-cell';
+      cell.dataset.date = dateStr;
+      cell.dataset.student = student.code;
 
-    header.appendChild(title);
-    header.appendChild(info);
-    card.appendChild(header);
-
-    const evtsList = document.createElement('div');
-    evtsList.className = 'custom-view-events-list';
-
-    dayEvts.forEach(evt => {
-      const item = document.createElement('div');
-      item.className = 'custom-view-event-item';
-      item.style.backgroundColor = getEventColor(evt);
-
-      // Find type details
-      const types = storage.getAppointmentTypes();
-      const typeObj = types.find(t => t.id === evt.type);
-
-      item.innerHTML = `
-        <span class="custom-view-event-time">${evt.startTime} - ${evt.endTime}</span>
-        <div class="custom-view-event-details">
-          <span class="custom-view-event-title">${evt.title}</span>
-          <span class="custom-view-event-roster">Kürzel: <strong>${evt.rosterCode}</strong></span>
-        </div>
-        <span class="custom-view-event-type">${typeObj ? typeObj.name : 'Sonstiges'}</span>
-      `;
-
-      item.addEventListener('click', () => {
-        ui.openAppointmentModalForEdit(evt);
+      // Click cell empty space to create appointment
+      cell.addEventListener('click', (e) => {
+        // Prevent triggering when clicking an appointment card
+        if (e.target.closest('.student-grid-event-card')) return;
+        ui.openAppointmentModalForCreate(dateStr, '08:00', '16:00', student.code);
       });
 
-      evtsList.appendChild(item);
+      // Find events matching this student on this day
+      const cellEvents = filtered.filter(evt => evt.instanceDate === dateStr && evt.rosterCode === student.code);
+      // Sort events by start time
+      cellEvents.sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+
+      if (cellEvents.length > 0) {
+        const eventsContainer = document.createElement('div');
+        eventsContainer.className = 'student-grid-cell-events';
+
+        cellEvents.forEach(evt => {
+          const card = document.createElement('div');
+          card.className = 'student-grid-event-card';
+          card.style.backgroundColor = getEventColor(evt);
+
+          const types = storage.getAppointmentTypes();
+          const typeObj = types.find(t => t.id === evt.type);
+
+          card.innerHTML = `
+            <span class="event-card-title" title="${evt.title}">${evt.title}</span>
+            <span class="event-card-time">${evt.startTime} - ${evt.endTime}</span>
+            <span class="event-card-type">${typeObj ? typeObj.name : ''}</span>
+          `;
+
+          // Click card to edit appointment
+          card.addEventListener('click', (e) => {
+            e.stopPropagation();
+            ui.openAppointmentModalForEdit(evt);
+          });
+
+          eventsContainer.appendChild(card);
+        });
+
+        cell.appendChild(eventsContainer);
+      }
+
+      row.appendChild(cell);
     });
 
-    card.appendChild(evtsList);
-    wrapper.appendChild(card);
-  });
+    tbody.appendChild(row);
+    loopDate.setDate(loopDate.getDate() + 1);
+  }
 
+  table.appendChild(tbody);
+  wrapper.appendChild(table);
   container.appendChild(wrapper);
 }
 
@@ -959,7 +634,7 @@ export function renderRosterFilterList() {
   // Extract unique roster codes from all appointments that are NOT student codes
   const codes = [...new Set(appointments.map(a => a.rosterCode))]
     .filter(Boolean)
-    .filter(code => !studentCodes.includes(code))
+    .filter(code => !studentCodes.some(s => s.code === code))
     .sort();
 
   const container = document.getElementById('roster-filters-list');
@@ -1009,7 +684,10 @@ export function renderStudentFilterList() {
     return;
   }
 
-  studentCodes.forEach(code => {
+  studentCodes.forEach(student => {
+    const code = student.code;
+    const color = student.color || '#3b82f6';
+
     // If search filter is active and doesn't match, skip
     if (rosterSearchQuery && !code.toLowerCase().includes(rosterSearchQuery)) {
       return;
@@ -1028,7 +706,15 @@ export function renderStudentFilterList() {
 
     const labelSpan = document.createElement('span');
     labelSpan.className = 'filter-item-label';
-    labelSpan.textContent = code;
+
+    const colorInd = document.createElement('span');
+    colorInd.className = 'filter-color-indicator';
+    colorInd.style.backgroundColor = color;
+
+    const textNode = document.createTextNode(code);
+
+    labelSpan.appendChild(colorInd);
+    labelSpan.appendChild(textNode);
 
     wrapper.appendChild(cb);
     wrapper.appendChild(labelSpan);
