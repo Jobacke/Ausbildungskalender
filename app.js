@@ -52,6 +52,26 @@ async function bootstrap() {
     // 1. Register sync state callback immediately to catch load events
     storage.registerSyncStateCallback(handleSyncStateChange);
     
+    // 1b. Check for auto-configuration parameters in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const importToken = urlParams.get('gh_token');
+    const importRepo = urlParams.get('gh_repo');
+    const importBranch = urlParams.get('gh_branch') || 'main';
+    const importPath = urlParams.get('gh_path') || 'data.json';
+
+    if (importToken && importRepo) {
+      github.saveConfig({
+        token: importToken,
+        repo: importRepo,
+        branch: importBranch,
+        path: importPath
+      });
+      
+      // Clean URL parameters immediately for security & clean address bar
+      const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+
     // 2. Load configurations and files from cache/github
     await storage.initDatabase();
     

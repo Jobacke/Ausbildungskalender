@@ -142,6 +142,16 @@ function populateGitHubForm() {
     document.getElementById('gh-repo').value = cfg.repo || '';
     document.getElementById('gh-branch').value = cfg.branch || 'main';
     document.getElementById('gh-path').value = cfg.path || 'data.json';
+
+    // Show/hide copy share link section based on active configuration
+    const shareWrapper = document.getElementById('gh-share-wrapper');
+    if (shareWrapper) {
+      if (github.isConfigured()) {
+        shareWrapper.classList.remove('hidden');
+      } else {
+        shareWrapper.classList.add('hidden');
+      }
+    }
   });
 }
 
@@ -834,6 +844,27 @@ export function initUIListeners() {
   // Lock Button in Header
   document.getElementById('lock-btn').addEventListener('click', () => {
     import('./auth.js').then(auth => auth.lockApp());
+  });
+
+  // GitHub settings - Copy share link
+  document.getElementById('gh-copy-link-btn').addEventListener('click', () => {
+    import('./github.js').then(github => {
+      const cfg = github.getConfig();
+      if (!github.isConfigured()) {
+        showToast('Bitte konfigurieren und speichern Sie zuerst die GitHub-Verbindung.', 'warning');
+        return;
+      }
+      
+      const shareUrl = `${window.location.protocol}//${window.location.host}/?gh_token=${encodeURIComponent(cfg.token)}&gh_repo=${encodeURIComponent(cfg.repo)}&gh_branch=${encodeURIComponent(cfg.branch)}&gh_path=${encodeURIComponent(cfg.path)}`;
+      
+      navigator.clipboard.writeText(shareUrl)
+        .then(() => {
+          showToast('Zugriffs-Link in die Zwischenablage kopiert! Senden Sie diesen Link an Ihre Teammitglieder.', 'success');
+        })
+        .catch(err => {
+          showToast('Kopieren fehlgeschlagen. Bitte kopieren Sie den Link manuell.', 'danger');
+        });
+    });
   });
 }
 export { promptRecurrenceChoice };
