@@ -39,7 +39,22 @@
       "color": "#8b5cf6"
     }
   ],
-  "appointments": [],
+  "appointments": [
+    {
+      "id": "evt-1781280990444",
+      "title": "Sendling",
+      "date": "2026-06-12",
+      "endDate": "2026-06-12",
+      "startTime": "08:00",
+      "endTime": "16:00",
+      "rosterCode": "BSC",
+      "type": "krank",
+      "color": "",
+      "seriesId": null,
+      "recurrence": null,
+      "exceptions": []
+    }
+  ],
   "studentCodes": [
     "BSC",
     "AFI"
