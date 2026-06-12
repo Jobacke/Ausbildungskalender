@@ -67,6 +67,20 @@
       "seriesId": null,
       "recurrence": null,
       "exceptions": []
+    },
+    {
+      "id": "evt-1781281956094",
+      "title": "Obersendling",
+      "date": "2026-06-08",
+      "endDate": "2026-06-12",
+      "startTime": "08:00",
+      "endTime": "16:00",
+      "rosterCode": "AFI",
+      "type": "krank",
+      "color": "",
+      "seriesId": null,
+      "recurrence": null,
+      "exceptions": []
     }
   ],
   "studentCodes": [
