@@ -430,9 +430,13 @@ function renderDayView(container, dateStr) {
   const labelHeader = document.createElement('div');
   labelHeader.className = 'grid-header-cell';
   labelHeader.textContent = 'Zeit';
+  labelHeader.style.gridColumn = '1';
+  labelHeader.style.gridRow = '1';
   
   const colHeader = document.createElement('div');
   colHeader.className = 'day-view-header-cell';
+  colHeader.style.gridColumn = '2';
+  colHeader.style.gridRow = '1';
   
   // Format day header
   const d = new Date(dateStr + 'T00:00:00');
@@ -444,6 +448,8 @@ function renderDayView(container, dateStr) {
   // Hour Rows (24 hours: 00:00 - 23:00)
   const columnsContainer = document.createElement('div');
   columnsContainer.className = 'week-column';
+  columnsContainer.style.gridColumn = '2';
+  columnsContainer.style.gridRow = '2 / span 24';
   // Attach date context for clicking
   columnsContainer.dataset.date = dateStr;
   columnsContainer.addEventListener('click', (e) => {
@@ -466,6 +472,8 @@ function renderDayView(container, dateStr) {
     const hourLabel = document.createElement('div');
     hourLabel.className = 'hour-label-cell';
     hourLabel.textContent = `${String(hour).padStart(2, '0')}:00`;
+    hourLabel.style.gridColumn = '1';
+    hourLabel.style.gridRow = `${hour + 2}`;
     grid.appendChild(hourLabel);
     
     // Row background line inside column
@@ -539,6 +547,8 @@ function renderWeekView(container, mondayDate) {
   const cornerCell = document.createElement('div');
   cornerCell.className = 'grid-header-cell';
   cornerCell.textContent = 'Zeit';
+  cornerCell.style.gridColumn = '1';
+  cornerCell.style.gridRow = '1';
   grid.appendChild(cornerCell);
 
   // 7 Weekday columns headers
@@ -553,6 +563,8 @@ function renderWeekView(container, mondayDate) {
 
     const headCell = document.createElement('div');
     headCell.className = 'week-view-header-cell';
+    headCell.style.gridColumn = `${i + 2}`;
+    headCell.style.gridRow = '1';
     if (dateStr === todayStr) {
       headCell.classList.add('today');
     }
@@ -575,6 +587,8 @@ function renderWeekView(container, mondayDate) {
   for (let i = 0; i < 7; i++) {
     const col = document.createElement('div');
     col.className = 'week-column';
+    col.style.gridColumn = `${i + 2}`;
+    col.style.gridRow = '2 / span 24';
     if (daysDates[i] === todayStr) {
       col.classList.add('today');
     }
@@ -600,6 +614,8 @@ function renderWeekView(container, mondayDate) {
     const hourLabel = document.createElement('div');
     hourLabel.className = 'hour-label-cell';
     hourLabel.textContent = `${String(hour).padStart(2, '0')}:00`;
+    hourLabel.style.gridColumn = '1';
+    hourLabel.style.gridRow = `${hour + 2}`;
     grid.appendChild(hourLabel);
 
     // Draw row segments inside columns
