@@ -1,72 +1,114 @@
 {
   "version": 1,
-  "users": [],
+  "users": [
+    {
+      "id": "usr-1781254169822",
+      "username": "jba",
+      "pinHash": "dbc8493a4c1d8f2a11add49e049a7426f1d1d5f91c9f0c666c9cf63ff2fc5249"
+    },
+    {
+      "id": "usr-1781257710277",
+      "username": "mko",
+      "pinHash": "71a3792b352689ae22889bd6bbab6a0fd326e069fb32ed04e482673df7829bc2"
+    },
+    {
+      "id": "usr-1781257732498",
+      "username": "jst",
+      "pinHash": "2f57628998867bc9939e8ae802c9a88bbfe0efc0f5a88e8867352e6149b7a92c"
+    }
+  ],
   "appointmentTypes": [
     {
       "id": "dienst",
-      "name": "Dienst",
-      "color": "#3b82f6"
-    },
-    {
-      "id": "schulung",
-      "name": "Schulung",
-      "color": "#f59e0b"
+      "name": "Klinik",
+      "color": "#f73b3b"
     },
     {
       "id": "urlaub",
       "name": "Urlaub",
-      "color": "#10b981"
+      "color": "#1031b7"
     },
     {
       "id": "krank",
-      "name": "Krank",
-      "color": "#ef4444"
-    },
-    {
-      "id": "freizeit",
-      "name": "Freizeit",
-      "color": "#6b7280"
+      "name": "Wache",
+      "color": "#42f06e"
     },
     {
       "id": "schule",
       "name": "Schule",
-      "color": "#8b5cf6"
+      "color": "#ad20f8"
     }
   ],
   "appointments": [
     {
-      "id": "appt-bsc-single",
-      "title": "Vormittagstraining",
-      "date": "2026-06-15",
+      "id": "evt-1781287776994",
+      "title": "",
+      "date": "2026-06-08",
+      "endDate": "2026-06-12",
       "startTime": "08:00",
-      "endTime": "12:00",
+      "endTime": "16:00",
       "rosterCode": "BSC",
       "type": "dienst",
-      "color": "#3b82f6",
+      "color": "",
       "seriesId": null,
-      "recurrence": null
+      "recurrence": null,
+      "exceptions": []
     },
     {
-      "id": "appt-afi-weekly",
-      "title": "Wöchentlicher AFI Unterricht",
+      "id": "evt-1781287791359",
+      "title": "",
       "date": "2026-06-08",
-      "startTime": "14:00",
+      "endDate": "2026-06-12",
+      "startTime": "08:00",
       "endTime": "16:00",
       "rosterCode": "AFI",
-      "type": "schulung",
-      "color": "#f59e0b",
-      "seriesId": "series-afi-weekly",
-      "recurrence": {
-        "frequency": "weekly",
-        "interval": 1,
-        "daysOfWeek": [
-          1,
-          3
-        ],
-        "endDate": "2026-06-30"
-      },
+      "type": "krank",
+      "color": "",
+      "seriesId": null,
+      "recurrence": null,
+      "exceptions": []
+    },
+    {
+      "id": "evt-1781287820259",
+      "title": "",
+      "date": "2026-06-08",
+      "endDate": "2026-06-12",
+      "startTime": "08:00",
+      "endTime": "16:00",
+      "rosterCode": "FHA",
+      "type": "schule",
+      "color": "",
+      "seriesId": null,
+      "recurrence": null,
+      "exceptions": []
+    },
+    {
+      "id": "evt-1781327628067",
+      "title": "",
+      "date": "2026-06-08",
+      "endDate": "2026-06-08",
+      "startTime": "17:00",
+      "endTime": "21:00",
+      "rosterCode": "BSC",
+      "type": "krank",
+      "color": "",
+      "seriesId": null,
+      "recurrence": null,
       "exceptions": []
     }
   ],
-  "studentCodes": []
+  "studentCodes": [
+    {
+      "code": "BSC",
+      "color": "#ff2600"
+    },
+    {
+      "code": "AFI",
+      "color": "#3b82f6"
+    },
+    {
+      "code": "FHA",
+      "color": "#4f7a28"
+    }
+  ]
 }
