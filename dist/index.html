@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/index-DpBgPUrR.js"></script>
+  <script type="module" crossorigin src="/assets/index-DM7yzwGN.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-CXetES68.css">
 </head>
 <body class="dark-theme">
@@ -156,7 +156,7 @@
         
         <!-- Version Number -->
         <div class="auth-card-footer text-center text-xs text-muted mt-4 pt-2 border-t" style="opacity: 0.6;">
-          Version 1.1.6
+          Version 1.1.7
         </div>
       </div>
     </div>
@@ -171,7 +171,7 @@
           <svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
           </svg>
-          <span class="brand-text">Ausbildungskalender <span class="brand-version">v1.1.6</span></span>
+          <span class="brand-text">Ausbildungskalender <span class="brand-version">v1.1.7</span></span>
         </div>
         <nav class="main-nav">
           <button class="nav-btn active" data-target="calendar-section">Kalender</button>
@@ -272,29 +272,7 @@
             </div>
           </details>
 
-          <!-- Roster Code Filter -->
-          <details class="sidebar-block" open>
-            <summary class="sidebar-block-summary">
-              <div class="sidebar-block-header">
-                <div class="summary-title-wrapper">
-                  <svg class="summary-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-                  </svg>
-                  <h3>Dienstplankürzel</h3>
-                </div>
-                <button id="clear-roster-filters" class="btn-link">Alle</button>
-              </div>
-            </summary>
-            <div class="search-box">
-              <input type="text" id="roster-search" placeholder="Suchen...">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.637 10.637Z" />
-              </svg>
-            </div>
-            <div id="roster-filters-list" class="filter-checklist">
-              <!-- Populated dynamically -->
-            </div>
-          </details>
+
 
           <!-- Series / Terminarten Filter -->
           <details class="sidebar-block" open>
@@ -447,73 +425,27 @@
         <div class="section-container">
           <div class="grid-two-cols">
             
-            <!-- GitHub Settings -->
+            <!-- Left Column: Appointment Types -->
             <div class="content-panel glass">
               <div class="panel-header">
-                <h2>GitHub Synchronisation</h2>
-                <p>Verknüpfen Sie ein Repository, um Ihre Termindaten dauerhaft zu speichern.</p>
+                <h2>Terminarten & Farben</h2>
+                <p>Farbcodes für verschiedene Terminarten anpassen</p>
               </div>
-              <form id="github-settings-form" class="form-group">
-                <div class="input-wrapper">
-                  <label for="gh-token">GitHub Personal Access Token (PAT)</label>
-                  <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
-                  <small class="input-help">Erforderliche Scopes: <code>repo</code> (für private Repos) oder <code>public_repo</code>.</small>
-                </div>
-                
-                <div class="input-wrapper">
-                  <label for="gh-repo">Repository (Besitzer/Name)</label>
-                  <input type="text" id="gh-repo" placeholder="z.B. vjbackhaus/ausbildungskalender">
-                </div>
-
-                <div class="grid-two-cols-nested">
-                  <div class="input-wrapper">
-                    <label for="gh-branch">Branch</label>
-                    <input type="text" id="gh-branch" placeholder="main" value="main">
-                  </div>
-                  <div class="input-wrapper">
-                    <label for="gh-path">Dateipfad im Repo</label>
-                    <input type="text" id="gh-path" placeholder="data.json" value="data.json">
-                  </div>
-                </div>
-
-                <div class="form-actions">
-                  <button type="button" id="gh-test-btn" class="btn-secondary">Verbindung testen</button>
-                  <button type="submit" class="btn-primary">Speichern & Syncen</button>
-                </div>
-                
-                <div class="border-t pt-4 mt-4 hidden" id="gh-share-wrapper">
-                  <p class="text-xs text-muted mb-2">Teilen Sie den Zugriff mit anderen Teammitgliedern. Der folgende Link konfiguriert die App automatisch auf deren Geräten:</p>
-                  <button type="button" id="gh-copy-link-btn" class="btn-secondary w-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:6px;">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935-2.186 2.25 2.25 0 0 0-3.935 2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
-                    </svg>
-                    Zugriffs-Link kopieren
-                  </button>
-                </div>
-              </form>
+              <div id="settings-types-list" class="settings-types-list">
+                <!-- Dynamically populated rows of Type Name + Color Input -->
+              </div>
+              <button id="add-type-btn" class="btn-secondary w-full mt-4">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:6px;">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Terminart hinzufügen
+              </button>
+              <button id="save-types-btn" class="btn-primary w-full mt-2">Kategorien & Farben speichern</button>
             </div>
 
-            <!-- Data & Configuration Settings -->
+            <!-- Right Column: Student Initials & Backup -->
             <div class="sidebar-forms">
               
-              <!-- Appointment Types / Categories -->
-              <div class="content-panel glass">
-                <div class="panel-header">
-                  <h2>Terminarten & Farben</h2>
-                  <p>Farbcodes für verschiedene Terminarten anpassen</p>
-                </div>
-                <div id="settings-types-list" class="settings-types-list">
-                  <!-- Dynamically populated rows of Type Name + Color Input -->
-                </div>
-                <button id="add-type-btn" class="btn-secondary w-full mt-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:6px;">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                  </svg>
-                  Terminart hinzufügen
-                </button>
-                <button id="save-types-btn" class="btn-primary w-full mt-2">Kategorien & Farben speichern</button>
-              </div>
-
               <!-- Student Initials (Schülerkürzel) -->
               <div class="content-panel glass">
                 <div class="panel-header">

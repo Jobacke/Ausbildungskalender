@@ -3,8 +3,8 @@
  * Manages view transitions, toasts, modals, inputs, and database import/export flows.
  */
 
-import * as storage from './storage.js?v=1.1.6';
-import * as calendar from './calendar.js?v=1.1.6';
+import * as storage from './storage.js?v=1.1.7';
+import * as calendar from './calendar.js?v=1.1.7';
 
 // Global state for appointment modal
 let activeEditingAppt = null; // Hold reference if editing
@@ -96,7 +96,7 @@ export function initNavListeners() {
         calendar.renderCalendar();
       } else if (targetId === 'users-section') {
         // Import auth dynamically to render table without cyclic load bottlenecks
-        import('./auth.js?v=1.1.6').then(auth => auth.renderUsersTable());
+        import('./auth.js?v=1.1.7').then(auth => auth.renderUsersTable());
       } else if (targetId === 'settings-section') {
         renderSettingsTypesEditor();
         renderSettingsStudentsEditor();
@@ -178,12 +178,17 @@ export function refreshFormSelects() {
  * Populate GitHub settings form from active config
  */
 function populateGitHubForm() {
-  import('./github.js?v=1.1.6').then(github => {
+  import('./github.js?v=1.1.7').then(github => {
     const cfg = github.getConfig();
-    document.getElementById('gh-token').value = cfg.token || '';
-    document.getElementById('gh-repo').value = cfg.repo || '';
-    document.getElementById('gh-branch').value = cfg.branch || 'main';
-    document.getElementById('gh-path').value = cfg.path || 'data.json';
+    const tokenEl = document.getElementById('gh-token');
+    const repoEl = document.getElementById('gh-repo');
+    const branchEl = document.getElementById('gh-branch');
+    const pathEl = document.getElementById('gh-path');
+    
+    if (tokenEl) tokenEl.value = cfg.token || '';
+    if (repoEl) repoEl.value = cfg.repo || '';
+    if (branchEl) branchEl.value = cfg.branch || 'main';
+    if (pathEl) pathEl.value = cfg.path || 'data.json';
 
     // Show/hide copy share link section based on active configuration
     const shareWrapper = document.getElementById('gh-share-wrapper');
@@ -426,16 +431,7 @@ export function initUIListeners() {
   // Navigation
   initNavListeners();
 
-  // Calendar search input listener
-  document.getElementById('roster-search').addEventListener('input', (e) => {
-    calendar.setRosterSearch(e.target.value);
-  });
 
-  // Calendar filter resets
-  document.getElementById('clear-roster-filters').addEventListener('click', (e) => {
-    e.stopPropagation();
-    calendar.resetAllFilters();
-  });
   document.getElementById('clear-student-filters').addEventListener('click', (e) => {
     e.stopPropagation();
     calendar.resetAllFilters();
@@ -888,70 +884,76 @@ export function initUIListeners() {
   });
 
   // --- settings view - GitHub Form Submit ---
-  document.getElementById('github-settings-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const token = document.getElementById('gh-token').value.trim();
-    const repo = document.getElementById('gh-repo').value.trim();
-    const branch = document.getElementById('gh-branch').value.trim();
-    const path = document.getElementById('gh-path').value.trim();
+  const githubForm = document.getElementById('github-settings-form');
+  if (githubForm) {
+    githubForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const token = document.getElementById('gh-token').value.trim();
+      const repo = document.getElementById('gh-repo').value.trim();
+      const branch = document.getElementById('gh-branch').value.trim();
+      const path = document.getElementById('gh-path').value.trim();
 
-    if (!token || !repo) {
-      showToast('GitHub Token und Repository sind erforderlich.', 'warning');
-      return;
-    }
-
-    import('./github.js?v=1.1.6').then(async (github) => {
-      showLoader('Verbindung mit GitHub wird geprüft...');
-      try {
-        const res = await github.testConnection({ token, repo, branch, path });
-        
-        // Save
-        github.saveConfig({ token, repo, branch, path });
-        
-        hideLoader();
-        showToast('Erfolgreich mit GitHub verbunden und konfiguriert!', 'success');
-        
-        // Trigger sync
-        showLoader('Daten mit GitHub synchronisieren...');
-        await storage.initDatabase();
-        hideLoader();
-        
-        calendar.renderCalendar();
-      } catch (err) {
-        hideLoader();
-        showToast(`GitHub-Verbindungsfehler: ${err.message}`, 'danger');
+      if (!token || !repo) {
+        showToast('GitHub Token und Repository sind erforderlich.', 'warning');
+        return;
       }
+
+      import('./github.js?v=1.1.7').then(async (github) => {
+        showLoader('Verbindung mit GitHub wird geprüft...');
+        try {
+          const res = await github.testConnection({ token, repo, branch, path });
+          
+          // Save
+          github.saveConfig({ token, repo, branch, path });
+          
+          hideLoader();
+          showToast('Erfolgreich mit GitHub verbunden und konfiguriert!', 'success');
+          
+          // Trigger sync
+          showLoader('Daten mit GitHub synchronisieren...');
+          await storage.initDatabase();
+          hideLoader();
+          
+          calendar.renderCalendar();
+        } catch (err) {
+          hideLoader();
+          showToast(`GitHub-Verbindungsfehler: ${err.message}`, 'danger');
+        }
+      });
     });
-  });
+  }
 
   // GitHub settings - Test Connection Button
-  document.getElementById('gh-test-btn').addEventListener('click', () => {
-    const token = document.getElementById('gh-token').value.trim();
-    const repo = document.getElementById('gh-repo').value.trim();
-    const branch = document.getElementById('gh-branch').value.trim();
-    const path = document.getElementById('gh-path').value.trim();
+  const ghTestBtn = document.getElementById('gh-test-btn');
+  if (ghTestBtn) {
+    ghTestBtn.addEventListener('click', () => {
+      const token = document.getElementById('gh-token').value.trim();
+      const repo = document.getElementById('gh-repo').value.trim();
+      const branch = document.getElementById('gh-branch').value.trim();
+      const path = document.getElementById('gh-path').value.trim();
 
-    if (!token || !repo) {
-      showToast('Bitte Token und Repo ausfüllen zum Testen.', 'warning');
-      return;
-    }
-
-    import('./github.js?v=1.1.6').then(async (github) => {
-      showLoader('Prüfe GitHub Verbindung...');
-      try {
-        const res = await github.testConnection({ token, repo, branch, path });
-        hideLoader();
-        if (res.fileExists) {
-          showToast('Erfolgreich! Die Datei "data.json" existiert bereits im Repository.', 'success');
-        } else {
-          showToast('Erfolgreich! Die Verbindung steht. "data.json" wird beim ersten Speichern erstellt.', 'info');
-        }
-      } catch (err) {
-        hideLoader();
-        showToast(`Test fehlgeschlagen: ${err.message}`, 'danger');
+      if (!token || !repo) {
+        showToast('Bitte Token und Repo ausfüllen zum Testen.', 'warning');
+        return;
       }
+
+      import('./github.js?v=1.1.7').then(async (github) => {
+        showLoader('Prüfe GitHub Verbindung...');
+        try {
+          const res = await github.testConnection({ token, repo, branch, path });
+          hideLoader();
+          if (res.fileExists) {
+            showToast('Erfolgreich! Die Datei "data.json" existiert bereits im Repository.', 'success');
+          } else {
+            showToast('Erfolgreich! Die Verbindung steht. "data.json" wird beim ersten Speichern erstellt.', 'info');
+          }
+        } catch (err) {
+          hideLoader();
+          showToast(`Test fehlgeschlagen: ${err.message}`, 'danger');
+        }
+      });
     });
-  });
+  }
 
   // --- Manual JSON Data Export ---
   document.getElementById('export-json-btn').addEventListener('click', () => {
@@ -1012,29 +1014,32 @@ export function initUIListeners() {
 
   // Lock Button in Header
   document.getElementById('lock-btn').addEventListener('click', () => {
-    import('./auth.js?v=1.1.6').then(auth => auth.lockApp());
+    import('./auth.js?v=1.1.7').then(auth => auth.lockApp());
   });
 
   // GitHub settings - Copy share link
-  document.getElementById('gh-copy-link-btn').addEventListener('click', () => {
-    import('./github.js?v=1.1.6').then(github => {
-      const cfg = github.getConfig();
-      if (!github.isConfigured()) {
-        showToast('Bitte konfigurieren und speichern Sie zuerst die GitHub-Verbindung.', 'warning');
-        return;
-      }
-      
-      const shareUrl = `${window.location.protocol}//${window.location.host}/?gh_token=${encodeURIComponent(cfg.token)}&gh_repo=${encodeURIComponent(cfg.repo)}&gh_branch=${encodeURIComponent(cfg.branch)}&gh_path=${encodeURIComponent(cfg.path)}`;
-      
-      navigator.clipboard.writeText(shareUrl)
-        .then(() => {
-          showToast('Zugriffs-Link in die Zwischenablage kopiert! Senden Sie diesen Link an Ihre Teammitglieder.', 'success');
-        })
-        .catch(err => {
-          showToast('Kopieren fehlgeschlagen. Bitte kopieren Sie den Link manuell.', 'danger');
-        });
+  const copyLinkBtn = document.getElementById('gh-copy-link-btn');
+  if (copyLinkBtn) {
+    copyLinkBtn.addEventListener('click', () => {
+      import('./github.js?v=1.1.7').then(github => {
+        const cfg = github.getConfig();
+        if (!github.isConfigured()) {
+          showToast('Bitte konfigurieren und speichern Sie zuerst die GitHub-Verbindung.', 'warning');
+          return;
+        }
+        
+        const shareUrl = `${window.location.protocol}//${window.location.host}/?gh_token=${encodeURIComponent(cfg.token)}&gh_repo=${encodeURIComponent(cfg.repo)}&gh_branch=${encodeURIComponent(cfg.branch)}&gh_path=${encodeURIComponent(cfg.path)}`;
+        
+        navigator.clipboard.writeText(shareUrl)
+          .then(() => {
+            showToast('Zugriffs-Link in die Zwischenablage kopiert! Senden Sie diesen Link an Ihre Teammitglieder.', 'success');
+          })
+          .catch(err => {
+            showToast('Kopieren fehlgeschlagen. Bitte kopieren Sie den Link manuell.', 'danger');
+          });
+      });
     });
-  });
+  }
 
   // Adjust filter open states on viewport size changes
   adjustFiltersForMobile();

@@ -3,8 +3,8 @@
  * Manages view states, ranges, date logic, recurring series expansion, and overlapping layout algorithms.
  */
 
-import * as storage from './storage.js?v=1.1.6';
-import * as ui from './ui.js?v=1.1.6';
+import * as storage from './storage.js?v=1.1.7';
+import * as ui from './ui.js?v=1.1.7';
 
 // Calendar view state
 let viewMode = 'week'; // 'day', 'week', 'month', 'custom'
@@ -81,7 +81,9 @@ export function resetAllFilters() {
   activeRosterFilters.clear();
   activeTypeFilters.clear();
   rosterSearchQuery = '';
-  document.getElementById('roster-search').value = '';
+  
+  const rosterSearchEl = document.getElementById('roster-search');
+  if (rosterSearchEl) rosterSearchEl.value = '';
   
   // Refresh sidebars
   renderRosterFilterList();
@@ -613,49 +615,7 @@ function renderStudentGrid(container, startDateStr, endDateStr) {
  * Renders the roster code checklist filters in the sidebar
  */
 export function renderRosterFilterList() {
-  const appointments = storage.getAppointments();
-  const studentCodes = storage.getStudentCodes();
-  
-  // Extract unique roster codes from all appointments that are NOT student codes
-  const codes = [...new Set(appointments.map(a => a.rosterCode))]
-    .filter(Boolean)
-    .filter(code => !studentCodes.includes(code))
-    .sort();
-
-  const container = document.getElementById('roster-filters-list');
-  if (!container) return;
-  container.innerHTML = '';
-
-  if (codes.length === 0) {
-    container.innerHTML = '<span class="text-xs text-muted-light">Keine Dienstplankürzel vorhanden</span>';
-    return;
-  }
-
-  codes.forEach(code => {
-    // If search filter is active and doesn't match, skip
-    if (rosterSearchQuery && !code.toLowerCase().includes(rosterSearchQuery)) {
-      return;
-    }
-
-    const wrapper = document.createElement('label');
-    wrapper.className = 'checkbox-wrapper';
-
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.value = code;
-    cb.checked = activeRosterFilters.has(code);
-    cb.addEventListener('change', (e) => {
-      toggleRosterFilter(code, e.target.checked);
-    });
-
-    const labelSpan = document.createElement('span');
-    labelSpan.className = 'filter-item-label';
-    labelSpan.textContent = code;
-
-    wrapper.appendChild(cb);
-    wrapper.appendChild(labelSpan);
-    container.appendChild(wrapper);
-  });
+  // No-op: Dienstplankürzel filter has been removed from the UI.
 }
 
 export function renderStudentFilterList() {
