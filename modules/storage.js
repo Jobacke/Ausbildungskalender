@@ -27,6 +27,17 @@ let githubSaveTimeout = null;
 // Callbacks for UI updates
 let onSyncStateChange = null;
 
+let lastLoadFailed = false;
+let lastLoadError = '';
+
+export function hasLoadFailed() {
+  return lastLoadFailed;
+}
+
+export function getLoadError() {
+  return lastLoadError;
+}
+
 export function registerSyncStateCallback(cb) {
   onSyncStateChange = cb;
 }
@@ -41,6 +52,9 @@ function updateSyncStatus(status, errorMsg = '') {
  * Initializes database from local storage, then syncs with GitHub if configured.
  */
 export async function initDatabase() {
+  lastLoadFailed = false;
+  lastLoadError = '';
+
   // 1. Load from localStorage cache
   const cachedData = localStorage.getItem('ak_calendar_db');
   if (cachedData) {
@@ -70,7 +84,9 @@ export async function initDatabase() {
       }
     } catch (e) {
       console.error('Error syncing with GitHub on startup', e);
-      updateSyncStatus('error', e.message || 'GitHub-Ladefehler');
+      lastLoadFailed = true;
+      lastLoadError = e.message || 'GitHub-Ladefehler';
+      updateSyncStatus('error', lastLoadError);
     }
   } else {
     updateSyncStatus('not-configured');

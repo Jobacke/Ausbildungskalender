@@ -123,16 +123,32 @@ export function renderUserSelection() {
   const selectionDiv = document.getElementById('auth-users-selection');
   const authSubtitle = document.getElementById('auth-subtitle');
   const pinEntryDiv = document.getElementById('auth-pin-entry');
+  const connectionErrorDiv = document.getElementById('auth-connection-error');
 
   pinEntryDiv.classList.add('hidden');
+  if (connectionErrorDiv) connectionErrorDiv.classList.add('hidden');
 
-  if (users.length === 0) {
+  if (storage.hasLoadFailed() && users.length === 0) {
+    // Show connection error screen
+    selectionDiv.classList.add('hidden');
+    onboardingDiv.classList.add('hidden');
+    if (connectionErrorDiv) {
+      connectionErrorDiv.classList.remove('hidden');
+      const msgEl = document.getElementById('connection-error-msg');
+      if (msgEl) {
+        msgEl.textContent = `Die Verbindung zu GitHub ist fehlgeschlagen (${storage.getLoadError()}). Bitte prüfen Sie Ihre Internetverbindung.`;
+      }
+    }
+    authSubtitle.textContent = 'Verbindungsfehler';
+  } else if (users.length === 0) {
     // Show onboarding form
+    if (connectionErrorDiv) connectionErrorDiv.classList.add('hidden');
     selectionDiv.classList.add('hidden');
     onboardingDiv.classList.remove('hidden');
     authSubtitle.textContent = 'Willkommen zum Ausbildungskalender';
   } else {
     // Show user choices
+    if (connectionErrorDiv) connectionErrorDiv.classList.add('hidden');
     onboardingDiv.classList.add('hidden');
     selectionDiv.classList.remove('hidden');
     authSubtitle.textContent = 'Wählen Sie Ihren Account aus';
@@ -286,6 +302,50 @@ export function initAuthListeners() {
     resetPinEntry();
     renderUserSelection();
   });
+
+  // Connection Error listeners
+  const retryBtn = document.getElementById('auth-retry-btn');
+  if (retryBtn) {
+    retryBtn.addEventListener('click', async () => {
+      ui.showLoader('Verbindung wird wiederholt...');
+      try {
+        await storage.initDatabase();
+      } catch (err) {
+        console.error('Retry failed', err);
+      }
+      ui.hideLoader();
+      renderUserSelection();
+    });
+  }
+
+  const ignoreErrorBtn = document.getElementById('auth-ignore-error-btn');
+  if (ignoreErrorBtn) {
+    ignoreErrorBtn.addEventListener('click', () => {
+      const connectionErrorDiv = document.getElementById('auth-connection-error');
+      if (connectionErrorDiv) connectionErrorDiv.classList.add('hidden');
+      const users = storage.getUsers();
+      const onboardingDiv = document.getElementById('auth-onboarding');
+      const selectionDiv = document.getElementById('auth-users-selection');
+      const authSubtitle = document.getElementById('auth-subtitle');
+      if (users.length === 0) {
+        onboardingDiv.classList.remove('hidden');
+        authSubtitle.textContent = 'Willkommen zum Ausbildungskalender';
+      } else {
+        selectionDiv.classList.remove('hidden');
+        authSubtitle.textContent = 'Wählen Sie Ihren Account aus';
+      }
+    });
+  }
+
+  const showOnboardingBtn = document.getElementById('auth-show-onboarding-anyway');
+  if (showOnboardingBtn) {
+    showOnboardingBtn.addEventListener('click', () => {
+      const connectionErrorDiv = document.getElementById('auth-connection-error');
+      if (connectionErrorDiv) connectionErrorDiv.classList.add('hidden');
+      document.getElementById('auth-onboarding').classList.remove('hidden');
+      document.getElementById('auth-subtitle').textContent = 'Willkommen zum Ausbildungskalender';
+    });
+  }
 
   // Numeric keypad listeners
   const keys = document.querySelectorAll('.pin-key');

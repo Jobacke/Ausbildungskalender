@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/index-BCnHi09_.js"></script>
+  <script type="module" crossorigin src="/assets/index-D-08791K.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-BFmzZxYv.css">
 </head>
 <body class="dark-theme">
@@ -85,6 +85,18 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75 14.25 12m0 0 2.25 2.25M14.25 12l2.25-2.25M14.25 12 12 14.25m-2.58 4.92-6.374-6.363a2.25 2.25 0 0 1 0-3.182L9.42 3.03A2.25 2.25 0 0 1 11.022 2.3h9.728a2.25 2.25 0 0 1 2.25 2.25v13.5a2.25 2.25 0 0 1-2.25 2.25h-9.728a2.25 2.25 0 0 1-1.602-.67Z" />
             </svg>
           </button>
+        </div>
+      </div>
+
+      <!-- Connection Error Screen (shown when fetch fails on load) -->
+      <div id="auth-connection-error" class="auth-onboarding hidden">
+        <h2>Verbindungsfehler</h2>
+        <p id="connection-error-msg" class="text-center text-sm text-muted" style="margin-bottom: 1.5rem;">Die Verbindung zu GitHub ist fehlgeschlagen.</p>
+        <button id="auth-retry-btn" class="btn-primary w-full">Erneut versuchen</button>
+        <div class="onboarding-actions border-t pt-4 mt-4 text-center">
+          <button id="auth-ignore-error-btn" class="btn-link text-xs">Offline-Modus / Cache laden</button>
+          <span class="text-muted text-xs mx-2">|</span>
+          <button id="auth-show-onboarding-anyway" class="btn-link text-xs">Ersteinrichtung anzeigen</button>
         </div>
       </div>
 
