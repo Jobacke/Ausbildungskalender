@@ -11,8 +11,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/index-CvdxumFq.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-BWmM_kGC.css">
+  <script type="module" crossorigin src="/assets/index-BCnHi09_.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BFmzZxYv.css">
 </head>
 <body class="dark-theme">
   <!-- Loader Overlay -->
@@ -193,7 +193,15 @@
       <!-- Calendar Section -->
       <section id="calendar-section" class="app-section active">
         <!-- Sidebar filters -->
-        <aside class="sidebar-filters glass">
+        <aside class="sidebar-filters glass" id="sidebar-filters">
+          <div class="sidebar-header-mobile">
+            <h3>Filter & Zeitraum</h3>
+            <button id="close-filters-btn" class="btn-icon" type="button" title="Filter schließen">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 20px; height: 20px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
           <div class="sidebar-block">
             <h3>Zeitraum</h3>
             <div class="view-mode-selector">
@@ -230,22 +238,36 @@
           </div>
 
           <!-- Student Code Filter -->
-          <div class="sidebar-block">
-            <div class="sidebar-block-header">
-              <h3>Schülerkürzel</h3>
-              <button id="clear-student-filters" class="btn-link">Alle</button>
-            </div>
+          <details class="sidebar-block" open>
+            <summary class="sidebar-block-summary">
+              <div class="sidebar-block-header">
+                <div class="summary-title-wrapper">
+                  <svg class="summary-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                  </svg>
+                  <h3>Schülerkürzel</h3>
+                </div>
+                <button id="clear-student-filters" class="btn-link">Alle</button>
+              </div>
+            </summary>
             <div id="student-filters-list" class="filter-checklist">
               <!-- Populated dynamically -->
             </div>
-          </div>
+          </details>
 
           <!-- Roster Code Filter -->
-          <div class="sidebar-block">
-            <div class="sidebar-block-header">
-              <h3>Dienstplankürzel</h3>
-              <button id="clear-roster-filters" class="btn-link">Alle</button>
-            </div>
+          <details class="sidebar-block" open>
+            <summary class="sidebar-block-summary">
+              <div class="sidebar-block-header">
+                <div class="summary-title-wrapper">
+                  <svg class="summary-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                  </svg>
+                  <h3>Dienstplankürzel</h3>
+                </div>
+                <button id="clear-roster-filters" class="btn-link">Alle</button>
+              </div>
+            </summary>
             <div class="search-box">
               <input type="text" id="roster-search" placeholder="Suchen...">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -255,18 +277,25 @@
             <div id="roster-filters-list" class="filter-checklist">
               <!-- Populated dynamically -->
             </div>
-          </div>
+          </details>
 
           <!-- Series / Terminarten Filter -->
-          <div class="sidebar-block">
-            <div class="sidebar-block-header">
-              <h3>Terminarten & Serien</h3>
-              <button id="clear-type-filters" class="btn-link">Alle</button>
-            </div>
+          <details class="sidebar-block" open>
+            <summary class="sidebar-block-summary">
+              <div class="sidebar-block-header">
+                <div class="summary-title-wrapper">
+                  <svg class="summary-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                  </svg>
+                  <h3>Terminarten & Serien</h3>
+                </div>
+                <button id="clear-type-filters" class="btn-link">Alle</button>
+              </div>
+            </summary>
             <div id="type-filters-list" class="filter-checklist">
               <!-- Populated dynamically -->
             </div>
-          </div>
+          </details>
         </aside>
 
         <!-- Main Calendar Area -->
@@ -288,6 +317,12 @@
               <h2 id="calendar-title" class="calendar-title">Juni 2026</h2>
             </div>
             <div class="controls-right">
+              <button id="toggle-filters-btn" class="btn-secondary btn-icon-text" type="button">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:6px;">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.59v3.427a.75.75 0 0 1-.291.592l-3 2.25a.75.75 0 0 1-1.209-.593v-5.676a2.25 2.25 0 0 0-.659-1.59l-5.432-5.432A2.25 2.25 0 0 1 3 6.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
+                </svg>
+                Filter
+              </button>
               <button id="export-pdf-btn" class="btn-secondary btn-icon-text">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:6px;">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096a42.42 42.42 0 0 0-10.56 0m10.56 0L17.66 18m0 0a2.25 2.25 0 0 1-2.24 2.156H8.58A2.25 2.25 0 0 1 6.34 18M18 13.829V11.25A2.25 2.25 0 0 0 15.75 9h-7.5A2.25 2.25 0 0 0 6 11.25v2.579M18 10a2 2 0 1 0-4 0M6 10a2 2 0 1 0 4 0" />
@@ -298,7 +333,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:6px;">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
-                Termin erstellen
+                <span>Termin erstellen</span>
               </button>
             </div>
           </div>
@@ -690,6 +725,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Drawer Overlay for Mobile Filters -->
+  <div id="drawer-overlay" class="drawer-overlay"></div>
 
 </body>
 </html>

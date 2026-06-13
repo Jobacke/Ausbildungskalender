@@ -3,8 +3,8 @@
  * Manages view transitions, toasts, modals, inputs, and database import/export flows.
  */
 
-import * as storage from './storage.js?v=1.1.2';
-import * as calendar from './calendar.js?v=1.1.2';
+import * as storage from './storage.js?v=1.1.4';
+import * as calendar from './calendar.js?v=1.1.4';
 
 // Global state for appointment modal
 let activeEditingAppt = null; // Hold reference if editing
@@ -96,7 +96,7 @@ export function initNavListeners() {
         calendar.renderCalendar();
       } else if (targetId === 'users-section') {
         // Import auth dynamically to render table without cyclic load bottlenecks
-        import('./auth.js?v=1.1.2').then(auth => auth.renderUsersTable());
+        import('./auth.js?v=1.1.4').then(auth => auth.renderUsersTable());
       } else if (targetId === 'settings-section') {
         renderSettingsTypesEditor();
         renderSettingsStudentsEditor();
@@ -178,7 +178,7 @@ export function refreshFormSelects() {
  * Populate GitHub settings form from active config
  */
 function populateGitHubForm() {
-  import('./github.js?v=1.1.2').then(github => {
+  import('./github.js?v=1.1.4').then(github => {
     const cfg = github.getConfig();
     document.getElementById('gh-token').value = cfg.token || '';
     document.getElementById('gh-repo').value = cfg.repo || '';
@@ -432,13 +432,16 @@ export function initUIListeners() {
   });
 
   // Calendar filter resets
-  document.getElementById('clear-roster-filters').addEventListener('click', () => {
+  document.getElementById('clear-roster-filters').addEventListener('click', (e) => {
+    e.stopPropagation();
     calendar.resetAllFilters();
   });
-  document.getElementById('clear-student-filters').addEventListener('click', () => {
+  document.getElementById('clear-student-filters').addEventListener('click', (e) => {
+    e.stopPropagation();
     calendar.resetAllFilters();
   });
-  document.getElementById('clear-type-filters').addEventListener('click', () => {
+  document.getElementById('clear-type-filters').addEventListener('click', (e) => {
+    e.stopPropagation();
     calendar.resetAllFilters();
   });
 
@@ -486,6 +489,33 @@ export function initUIListeners() {
   if (exportPdfBtn) {
     exportPdfBtn.addEventListener('click', () => {
       window.print();
+    });
+  }
+
+  // Toggle Filters Drawer on Mobile
+  const toggleFiltersBtn = document.getElementById('toggle-filters-btn');
+  const closeFiltersBtn = document.getElementById('close-filters-btn');
+  const sidebarFilters = document.getElementById('sidebar-filters');
+  const drawerOverlay = document.getElementById('drawer-overlay');
+
+  if (toggleFiltersBtn && sidebarFilters && drawerOverlay) {
+    toggleFiltersBtn.addEventListener('click', () => {
+      sidebarFilters.classList.add('active');
+      drawerOverlay.classList.add('active');
+    });
+  }
+
+  if (closeFiltersBtn && sidebarFilters && drawerOverlay) {
+    closeFiltersBtn.addEventListener('click', () => {
+      sidebarFilters.classList.remove('active');
+      drawerOverlay.classList.remove('active');
+    });
+  }
+
+  if (drawerOverlay && sidebarFilters) {
+    drawerOverlay.addEventListener('click', () => {
+      sidebarFilters.classList.remove('active');
+      drawerOverlay.classList.remove('active');
     });
   }
 
@@ -870,7 +900,7 @@ export function initUIListeners() {
       return;
     }
 
-    import('./github.js?v=1.1.2').then(async (github) => {
+    import('./github.js?v=1.1.4').then(async (github) => {
       showLoader('Verbindung mit GitHub wird geprüft...');
       try {
         const res = await github.testConnection({ token, repo, branch, path });
@@ -906,7 +936,7 @@ export function initUIListeners() {
       return;
     }
 
-    import('./github.js?v=1.1.2').then(async (github) => {
+    import('./github.js?v=1.1.4').then(async (github) => {
       showLoader('Prüfe GitHub Verbindung...');
       try {
         const res = await github.testConnection({ token, repo, branch, path });
@@ -982,12 +1012,12 @@ export function initUIListeners() {
 
   // Lock Button in Header
   document.getElementById('lock-btn').addEventListener('click', () => {
-    import('./auth.js?v=1.1.2').then(auth => auth.lockApp());
+    import('./auth.js?v=1.1.4').then(auth => auth.lockApp());
   });
 
   // GitHub settings - Copy share link
   document.getElementById('gh-copy-link-btn').addEventListener('click', () => {
-    import('./github.js?v=1.1.2').then(github => {
+    import('./github.js?v=1.1.4').then(github => {
       const cfg = github.getConfig();
       if (!github.isConfigured()) {
         showToast('Bitte konfigurieren und speichern Sie zuerst die GitHub-Verbindung.', 'warning');
@@ -1004,6 +1034,22 @@ export function initUIListeners() {
           showToast('Kopieren fehlgeschlagen. Bitte kopieren Sie den Link manuell.', 'danger');
         });
     });
+  });
+
+  // Adjust filter open states on viewport size changes
+  adjustFiltersForMobile();
+  window.addEventListener('resize', adjustFiltersForMobile);
+}
+
+function adjustFiltersForMobile() {
+  const isMobile = window.innerWidth <= 768;
+  const filterBlocks = document.querySelectorAll('.sidebar-filters details.sidebar-block');
+  filterBlocks.forEach(block => {
+    if (isMobile) {
+      block.removeAttribute('open');
+    } else {
+      block.setAttribute('open', '');
+    }
   });
 }
 

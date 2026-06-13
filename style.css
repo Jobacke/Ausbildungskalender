@@ -762,16 +762,79 @@ input:focus, select:focus {
   overflow-y: auto;
 }
 
+#toggle-filters-btn {
+  display: none;
+}
+
+/* --- Drawer Overlay --- */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 13, 22, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 998;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-normal);
+}
+.drawer-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* --- Mobile Sidebar Header --- */
+.sidebar-header-mobile {
+  display: none;
+}
+
 .sidebar-block {
   display: flex;
   flex-direction: column;
   gap: 0.875rem;
 }
 
+details.sidebar-block {
+  display: block;
+}
+
+details.sidebar-block[open] {
+  display: flex;
+}
+
+.sidebar-block-summary {
+  list-style: none;
+  outline: none;
+  cursor: pointer;
+  width: 100%;
+}
+.sidebar-block-summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.summary-chevron {
+  width: 14px;
+  height: 14px;
+  transition: transform var(--transition-fast);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+details.sidebar-block[open] .summary-chevron {
+  transform: rotate(90deg);
+}
+
 .sidebar-block-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
 }
 
 .sidebar-block h3 {
@@ -1634,13 +1697,50 @@ input:focus, select:focus {
   }
   #calendar-section {
     flex-direction: column;
-    overflow-y: auto;
+    overflow: hidden;
   }
   .sidebar-filters {
-    width: 100%;
-    height: auto;
-    flex-shrink: 0;
-    order: 2;
+    position: fixed !important;
+    top: 0;
+    right: -320px;
+    width: 300px;
+    height: 100%;
+    z-index: 999;
+    background: var(--bg-glass) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border-left: 1px solid var(--border-glass) !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    border-right: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    overflow-y: auto;
+    transition: right var(--transition-normal);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5) !important;
+  }
+  .sidebar-filters.active {
+    right: 0 !important;
+  }
+  .sidebar-header-mobile {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-glass);
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .sidebar-header-mobile h3 {
+    font-family: var(--font-heading);
+    font-size: 1.125rem;
+    font-weight: 700;
+  }
+  #toggle-filters-btn {
+    display: inline-flex !important;
   }
   .calendar-container {
     order: 1;
@@ -1674,12 +1774,41 @@ input:focus, select:focus {
   }
   .controls-right {
     width: 100%;
-    flex-direction: column;
-    align-items: stretch;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
   }
   .controls-right button {
     width: 100%;
+  }
+  #add-appointment-btn {
+    position: fixed !important;
+    bottom: 2rem !important;
+    right: 1.5rem !important;
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: var(--radius-full) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45) !important;
+    z-index: 990 !important;
+    padding: 0 !important;
+    background: linear-gradient(135deg, var(--primary), var(--primary-hover)) !important;
+  }
+  #add-appointment-btn:hover {
+    transform: translateY(-2px) scale(1.02);
+  }
+  #add-appointment-btn:active {
+    transform: translateY(1px) scale(0.98);
+  }
+  #add-appointment-btn span {
+    display: none !important;
+  }
+  #add-appointment-btn svg {
+    width: 26px !important;
+    height: 26px !important;
+    margin: 0 !important;
   }
 }
 

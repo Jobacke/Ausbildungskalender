@@ -3,11 +3,11 @@
  * Bootstraps the application, registers events, and syncs status indicators.
  */
 
-import * as storage from './modules/storage.js?v=1.1.2';
-import * as auth from './modules/auth.js?v=1.1.2';
-import * as calendar from './modules/calendar.js?v=1.1.2';
-import * as ui from './modules/ui.js?v=1.1.2';
-import * as github from './modules/github.js?v=1.1.2';
+import * as storage from './modules/storage.js?v=1.1.4';
+import * as auth from './modules/auth.js?v=1.1.4';
+import * as calendar from './modules/calendar.js?v=1.1.4';
+import * as ui from './modules/ui.js?v=1.1.4';
+import * as github from './modules/github.js?v=1.1.4';
 
 // Bind sync indicator elements
 const syncIndicator = document.getElementById('github-sync-indicator');
