@@ -644,6 +644,15 @@ input:focus, select:focus {
   font-weight: 700;
   font-size: 1.125rem;
   letter-spacing: -0.02em;
+  display: flex;
+  align-items: baseline;
+}
+.brand-version {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  opacity: 0.5;
+  margin-left: 0.35rem;
+  font-family: var(--font-body);
 }
 
 .main-nav {
@@ -1835,10 +1844,10 @@ details.sidebar-block[open] .summary-chevron {
 
 .student-grid-table th, 
 .student-grid-table td {
-  padding: 0.75rem;
+  padding: 0.5rem 0.5rem;
   border: 1px solid var(--border-glass);
   vertical-align: top;
-  min-width: 160px;
+  min-width: 110px;
 }
 
 .student-grid-table th {
@@ -1860,8 +1869,8 @@ details.sidebar-block[open] .summary-chevron {
   left: 0;
   background: rgba(9, 13, 22, 0.95);
   z-index: 11;
-  min-width: 120px;
-  width: 120px;
+  min-width: 85px;
+  width: 85px;
   font-weight: 500;
   border-right: 2px solid var(--border-glass-bright);
 }
