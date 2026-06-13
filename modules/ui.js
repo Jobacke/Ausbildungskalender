@@ -3,8 +3,8 @@
  * Manages view transitions, toasts, modals, inputs, and database import/export flows.
  */
 
-import * as storage from './storage.js?v=1.1.9';
-import * as calendar from './calendar.js?v=1.1.9';
+import * as storage from './storage.js?v=1.2.0';
+import * as calendar from './calendar.js?v=1.2.0';
 
 // Global state for appointment modal
 let activeEditingAppt = null; // Hold reference if editing
@@ -96,7 +96,7 @@ export function initNavListeners() {
         calendar.renderCalendar();
       } else if (targetId === 'users-section') {
         // Import auth dynamically to render table without cyclic load bottlenecks
-        import('./auth.js?v=1.1.9').then(auth => auth.renderUsersTable());
+        import('./auth.js?v=1.2.0').then(auth => auth.renderUsersTable());
       } else if (targetId === 'settings-section') {
         renderSettingsTypesEditor();
         renderSettingsStudentsEditor();
@@ -178,7 +178,7 @@ export function refreshFormSelects() {
  * Populate GitHub settings form from active config
  */
 function populateGitHubForm() {
-  import('./github.js?v=1.1.9').then(github => {
+  import('./github.js?v=1.2.0').then(github => {
     const cfg = github.getConfig();
     const tokenEl = document.getElementById('gh-token');
     const repoEl = document.getElementById('gh-repo');
@@ -554,6 +554,142 @@ export function initUIListeners() {
     document.getElementById('recur-days-weekly').style.display = e.target.value === 'weekly' ? 'block' : 'none';
   });
 
+  // --- Collision Validation Helpers ---
+  function timesOverlap(startA, endA, startB, endB) {
+    const startMinA = timeToMinutes(startA);
+    const endMinA = timeToMinutes(endA);
+    const startMinB = timeToMinutes(startB);
+    const endMinB = timeToMinutes(endB);
+    return startMinA < endMinB && endMinA > startMinB;
+  }
+
+  function expandAppt(appt, rangeStartStr, rangeEndStr) {
+    const expanded = [];
+    const rangeStart = new Date(rangeStartStr + 'T00:00:00');
+    const rangeEnd = new Date(rangeEndStr + 'T23:59:59');
+
+    const isRec = appt.recurrence && appt.recurrence.frequency && appt.recurrence.frequency !== 'none';
+
+    if (!isRec) {
+      const start = new Date(appt.date + 'T00:00:00');
+      const end = new Date((appt.endDate || appt.date) + 'T23:59:59');
+      
+      const loopStart = new Date(Math.max(start.getTime(), rangeStart.getTime()));
+      const loopEnd = new Date(Math.min(end.getTime(), rangeEnd.getTime()));
+      
+      if (loopStart <= loopEnd) {
+        let currentLoop = new Date(loopStart);
+        currentLoop.setHours(0,0,0,0);
+        while (currentLoop <= loopEnd) {
+          expanded.push(calendar.formatDateString(currentLoop));
+          currentLoop.setDate(currentLoop.getDate() + 1);
+        }
+      }
+    } else {
+      const rec = appt.recurrence;
+      const apptStart = new Date(appt.date + 'T00:00:00');
+      const recEnd = rec.endDate ? new Date(rec.endDate + 'T23:59:59') : null;
+      
+      const loopStart = new Date(Math.max(apptStart.getTime(), rangeStart.getTime()));
+      const loopEnd = new Date(recEnd ? Math.min(recEnd.getTime(), rangeEnd.getTime()) : rangeEnd.getTime());
+
+      if (loopStart <= loopEnd) {
+        let loopDate = new Date(loopStart);
+        loopDate.setHours(0, 0, 0, 0);
+        
+        const maxDaysSafety = 366 * 2;
+        let daysIterated = 0;
+        
+        while (loopDate <= loopEnd && daysIterated < maxDaysSafety) {
+          daysIterated++;
+          const currentStr = calendar.formatDateString(loopDate);
+          
+          if (appt.exceptions && appt.exceptions.includes(currentStr)) {
+            loopDate.setDate(loopDate.getDate() + 1);
+            continue;
+          }
+
+          let match = false;
+          if (rec.frequency === 'daily') {
+            const diffDays = Math.round((loopDate - apptStart) / 86400000);
+            if (diffDays >= 0 && diffDays % (rec.interval || 1) === 0) {
+              match = true;
+            }
+          } else if (rec.frequency === 'weekly') {
+            const diffDays = Math.round((loopDate - apptStart) / 86400000);
+            const diffWeeks = Math.floor(diffDays / 7);
+            if (diffDays >= 0 && diffWeeks % (rec.interval || 1) === 0) {
+              let jsDay = loopDate.getDay();
+              let isoDay = jsDay === 0 ? 7 : jsDay;
+              if (rec.daysOfWeek && rec.daysOfWeek.includes(isoDay)) {
+                match = true;
+              }
+            }
+          } else if (rec.frequency === 'monthly') {
+            const mDiff = (loopDate.getFullYear() - apptStart.getFullYear()) * 12 + (loopDate.getMonth() - apptStart.getMonth());
+            if (mDiff >= 0 && mDiff % (rec.interval || 1) === 0) {
+              if (loopDate.getDate() === apptStart.getDate()) {
+                match = true;
+              }
+            }
+          }
+
+          if (match) {
+            expanded.push(currentStr);
+          }
+          loopDate.setDate(loopDate.getDate() + 1);
+        }
+      }
+    }
+    return expanded;
+  }
+
+  function checkForCollision(candidate) {
+    const { date, endDate, startTime, endTime, rosterCode, recurrence } = candidate;
+    
+    let checkEndDateStr = endDate || date;
+    if (recurrence && recurrence.frequency && recurrence.frequency !== 'none') {
+      if (recurrence.endDate) {
+        checkEndDateStr = recurrence.endDate;
+      } else {
+        const checkEnd = new Date(date + 'T00:00:00');
+        checkEnd.setFullYear(checkEnd.getFullYear() + 2);
+        checkEndDateStr = calendar.formatDateString(checkEnd);
+      }
+    }
+
+    const existingOccurrences = calendar.getExpandedAppointments(date, checkEndDateStr);
+    const candidateDates = expandAppt(candidate, date, checkEndDateStr);
+
+    for (const candDate of candidateDates) {
+      const conflicts = existingOccurrences.filter(existing => {
+        if (existing.rosterCode !== rosterCode) return false;
+        if (existing.instanceDate !== candDate) return false;
+        
+        if (activeEditingAppt) {
+          if (existing.id === activeEditingAppt.id) return false;
+          if (existing.originalId === activeEditingAppt.id) return false;
+          if (activeEditingAppt.originalId && existing.id === activeEditingAppt.originalId) return false;
+          if (activeEditingAppt.originalId && existing.originalId === activeEditingAppt.originalId) return false;
+          if (activeEditingAppt.seriesId && existing.seriesId === activeEditingAppt.seriesId) return false;
+        }
+        
+        return timesOverlap(startTime, endTime, existing.startTime, existing.endTime);
+      });
+
+      if (conflicts.length > 0) {
+        const conflict = conflicts[0];
+        const conflictDateFormatted = new Date(candDate + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        return {
+          hasCollision: true,
+          message: `Terminkollision für Schüler ${rosterCode} am ${conflictDateFormatted}: "${conflict.title}" (${conflict.startTime} - ${conflict.endTime})`
+        };
+      }
+    }
+
+    return { hasCollision: false };
+  }
+
   // --- Appointment Form Submit Handler ---
   document.getElementById('appointment-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -616,6 +752,13 @@ export function initUIListeners() {
         exceptions: []
       };
 
+      // CHECK COLLISION FOR NEW APPOINTMENT
+      const collisionResult = checkForCollision(newAppt);
+      if (collisionResult.hasCollision) {
+        showToast(collisionResult.message, 'warning');
+        return;
+      }
+
       storage.setAppointments([...appts, newAppt]);
       showToast('Termin erfolgreich erstellt.', 'success');
       closeAppointmentModal();
@@ -656,14 +799,36 @@ export function initUIListeners() {
             exceptions: []
           };
 
+          // CHECK COLLISION FOR DETACHED APPOINTMENT
+          const collisionResult = checkForCollision(detachedAppt);
+          if (collisionResult.hasCollision) {
+            showToast(collisionResult.message, 'warning');
+            return;
+          }
+
           storage.setAppointments([...updated, detachedAppt]);
           showToast('Dieser Termin wurde aus der Serie gelöst und geändert.', 'success');
 
         } else if (choice === 'all') {
+          const updatedSeriesCandidate = {
+            id: activeEditingAppt.originalId,
+            title,
+            date,
+            startTime, endTime, rosterCode, type, color,
+            recurrence,
+            exceptions: activeEditingAppt.exceptions || []
+          };
+
+          // CHECK COLLISION FOR UPDATED SERIES
+          const collisionResult = checkForCollision(updatedSeriesCandidate);
+          if (collisionResult.hasCollision) {
+            showToast(collisionResult.message, 'warning');
+            return;
+          }
+
           // Update the parent series object itself
           const updated = appts.map(appt => {
             if (appt.id === activeEditingAppt.originalId) {
-              // Keep original ID and original start date, update details
               appt.title = title;
               appt.date = date; // moving start of series is allowed
               appt.startTime = startTime;
@@ -672,7 +837,6 @@ export function initUIListeners() {
               appt.type = type;
               appt.color = color;
               appt.recurrence = recurrence;
-              // If recurrence rules changed, might want to reset exceptions, let's keep it simple
             }
             return appt;
           });
@@ -683,6 +847,23 @@ export function initUIListeners() {
         
       } else {
         // Normal single appointment edit
+        const updatedCandidate = {
+          id: activeEditingAppt.id,
+          title,
+          date,
+          endDate,
+          startTime, endTime, rosterCode, type, color,
+          recurrence,
+          seriesId: isRec ? (activeEditingAppt.seriesId || `ser-${Date.now()}`) : null
+        };
+
+        // CHECK COLLISION FOR UPDATED CANDIDATE
+        const collisionResult = checkForCollision(updatedCandidate);
+        if (collisionResult.hasCollision) {
+          showToast(collisionResult.message, 'warning');
+          return;
+        }
+
         const updated = appts.map(appt => {
           if (appt.id === activeEditingAppt.id) {
             appt.title = title;
@@ -898,7 +1079,7 @@ export function initUIListeners() {
         return;
       }
 
-      import('./github.js?v=1.1.9').then(async (github) => {
+      import('./github.js?v=1.2.0').then(async (github) => {
         showLoader('Verbindung mit GitHub wird geprüft...');
         try {
           const res = await github.testConnection({ token, repo, branch, path });
@@ -937,7 +1118,7 @@ export function initUIListeners() {
         return;
       }
 
-      import('./github.js?v=1.1.9').then(async (github) => {
+      import('./github.js?v=1.2.0').then(async (github) => {
         showLoader('Prüfe GitHub Verbindung...');
         try {
           const res = await github.testConnection({ token, repo, branch, path });
@@ -1014,14 +1195,14 @@ export function initUIListeners() {
 
   // Lock Button in Header
   document.getElementById('lock-btn').addEventListener('click', () => {
-    import('./auth.js?v=1.1.9').then(auth => auth.lockApp());
+    import('./auth.js?v=1.2.0').then(auth => auth.lockApp());
   });
 
   // GitHub settings - Copy share link
   const copyLinkBtn = document.getElementById('gh-copy-link-btn');
   if (copyLinkBtn) {
     copyLinkBtn.addEventListener('click', () => {
-      import('./github.js?v=1.1.9').then(github => {
+      import('./github.js?v=1.2.0').then(github => {
         const cfg = github.getConfig();
         if (!github.isConfigured()) {
           showToast('Bitte konfigurieren und speichern Sie zuerst die GitHub-Verbindung.', 'warning');
