@@ -35,27 +35,27 @@
   ],
   "appointments": [
     {
-      "id": "appt-single",
-      "title": "Einzeltermin",
-      "date": "2026-06-12",
+      "id": "appt-bsc-single",
+      "title": "Vormittagstraining",
+      "date": "2026-06-15",
       "startTime": "08:00",
       "endTime": "12:00",
-      "rosterCode": "DK-1",
+      "rosterCode": "BSC",
       "type": "dienst",
       "color": "#3b82f6",
       "seriesId": null,
       "recurrence": null
     },
     {
-      "id": "appt-weekly",
-      "title": "Weekly Sync",
+      "id": "appt-afi-weekly",
+      "title": "Wöchentlicher AFI Unterricht",
       "date": "2026-06-08",
-      "startTime": "10:00",
-      "endTime": "11:00",
-      "rosterCode": "SYNC",
+      "startTime": "14:00",
+      "endTime": "16:00",
+      "rosterCode": "AFI",
       "type": "schulung",
       "color": "#f59e0b",
-      "seriesId": "series-weekly",
+      "seriesId": "series-afi-weekly",
       "recurrence": {
         "frequency": "weekly",
         "interval": 1,
@@ -63,11 +63,9 @@
           1,
           3
         ],
-        "endDate": "2026-06-22"
+        "endDate": "2026-06-30"
       },
-      "exceptions": [
-        "2026-06-15"
-      ]
+      "exceptions": []
     }
   ],
   "studentCodes": []
