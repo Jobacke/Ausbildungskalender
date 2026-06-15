@@ -95,6 +95,20 @@
       "seriesId": null,
       "recurrence": null,
       "exceptions": []
+    },
+    {
+      "id": "evt-1781523737739",
+      "title": "",
+      "date": "2026-06-15",
+      "endDate": "2026-06-30",
+      "startTime": "08:00",
+      "endTime": "16:00",
+      "rosterCode": "BSC",
+      "type": "dienst",
+      "color": "",
+      "seriesId": null,
+      "recurrence": null,
+      "exceptions": []
     }
   ],
   "studentCodes": [
