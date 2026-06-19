@@ -37,6 +37,11 @@
       "id": "schule",
       "name": "Schule",
       "color": "#0d43e3"
+    },
+    {
+      "id": "type-1781873746357",
+      "name": "Praxisbegleitung",
+      "color": "#3ef73b"
     }
   ],
   "appointments": [
