@@ -42,6 +42,11 @@
       "id": "type-1781873746357",
       "name": "Praxisbegleitung",
       "color": "#3ef73b"
+    },
+    {
+      "id": "type-1781873777884",
+      "name": "Praxistage",
+      "color": "#3bf73e"
     }
   ],
   "appointments": [
