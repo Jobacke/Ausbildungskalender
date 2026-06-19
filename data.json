@@ -98,17 +98,6 @@
     }
   ],
   "studentCodes": [
-    {
-      "code": "BSC",
-      "color": "#ff2600"
-    },
-    {
-      "code": "AFI",
-      "color": "#3b82f6"
-    },
-    {
-      "code": "FHA",
-      "color": "#4f7a28"
-    }
+    "MKO"
   ]
 }
